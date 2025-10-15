@@ -1,74 +1,71 @@
 /* =========================================================================
-   data-loader.js  –  robust CSV → tensors + noise & drawing helpers
+   data-loader.js  –  robust CSV → tensors, noise injection, drawing utils
    ========================================================================= */
 
 class MNISTDataLoader {
   constructor(){ this.train=null; this.test=null; }
 
-  /* ---------- private robust CSV parser -------------------------------- */
+  /* ---------- private CSV parser (skips headers & bad rows) ------------ */
   async #parseCsv(file){
-    const text = await file.text();
-    let rows = text.split(/\r?\n/).filter(Boolean);
+    const txt = await file.text();
+    let rows  = txt.split(/\r?\n/).filter(Boolean);
 
-    /* Remove header if first cell isn’t numeric */
+    /* Remove header row if first cell isn’t numeric */
     if (isNaN(parseInt(rows[0].split(',')[0]))) rows.shift();
 
-    const images = [];   // flat pixel values (normalized 0-1)
-    const labels = [];
+    const pix = [];       // flattened, normalised pixels
+    const lbl = [];
 
     rows.forEach((line,i)=>{
-      line = line.replace('\uFEFF','');                  // strip UTF-8 BOM
-      const vals = line.split(',');
-      if (vals.length !== 785){
-        console.warn(`⚠️ Skipping line ${i+1} (length ${vals.length})`);
-        return;
-      }
-      const label = Number(vals[0]);
-      if (Number.isNaN(label)){
-        console.warn(`⚠️ Skipping line ${i+1} (NaN label)`);
-        return;
-      }
-      labels.push(label);
-      for(let p=1;p<=784;p++) images.push(Number(vals[p])/255);
+      line = line.replace('\uFEFF','');
+      const v = line.split(',');
+      if (v.length !== 785) return console.warn(`⚠️  bad row ${i+1}`);
+      const lab = +v[0];
+      if (Number.isNaN(lab)) return console.warn(`⚠️  NaN at row ${i+1}`);
+      lbl.push(lab);
+      for (let p=1; p<=784; p++) pix.push(+v[p] / 255);
     });
 
-    if(!labels.length) throw new Error('No valid rows found in CSV.');
+    if(!lbl.length) throw new Error('No valid data rows in CSV.');
 
-    const xs = tf.tensor4d(images, [labels.length,28,28,1]);
-    const ys = tf.oneHot(tf.tensor1d(labels,'int32'),10);
-    return { xs, ys, count:labels.length };
+    const xs = tf.tensor4d(pix, [lbl.length,28,28,1]);
+    const ys = tf.oneHot(tf.tensor1d(lbl,'int32'),10);
+    return { xs, ys, count:lbl.length };
   }
 
-  /* public loaders */
-  async loadTrain(file){ this.train = await this.#parseCsv(file); return this.train; }
-  async loadTest (file){ this.test  = await this.#parseCsv(file); return this.test;  }
+  async loadTrain(f){ this.train = await this.#parseCsv(f); return this.train; }
+  async loadTest (f){ this.test  = await this.#parseCsv(f); return this.test;  }
 
-  /* helpers -------------------------------------------------------------- */
-  split(xs,ys,ratio=0.1){
-    const val = Math.floor(xs.shape[0]*ratio);
-    const [tX,vX] = tf.split(xs,[xs.shape[0]-val,val]);
-    const [tY,vY] = tf.split(ys,[ys.shape[0]-val,val]);
+  /* ---------- helpers -------------------------------------------------- */
+  split(xs,ys,r=0.1){
+    const v = Math.floor(xs.shape[0]*r);
+    const [tX,vX] = tf.split(xs,[xs.shape[0]-v,v]);
+    const [tY,vY] = tf.split(ys,[ys.shape[0]-v,v]);
     return { trainXs:tX, valXs:vX, trainYs:tY, valYs:vY };
   }
 
-  addNoise(x,f=0.5){
-    return tf.tidy(()=> x.add(tf.randomNormal(x.shape,0,1).mul(f)).clipByValue(0,1));
+  /** Salt-and-pepper style noise (strong visual corruption) */
+  addNoise(x,prob=0.5){
+    return tf.tidy(()=>{
+      const r = tf.randomUniform(x.shape);                 // 0-1
+      const black = r.less(prob/2).cast('float32');        // set to 0
+      const white = r.greaterEqual(prob/2).logicalAnd(r.less(prob)).cast('float32');
+      return x.mul(r.greaterEqual(prob).cast('float32'))   // keep originals
+              .add(white)                                  // add white pixels
+              .clipByValue(0,1);
+    });
   }
 
-  drawTensorToCanvas(t,canvas,scale=4){
-    const [h,w]=[28,28];
-    canvas.width=w*scale; canvas.height=h*scale;
-    const ctx=canvas.getContext('2d');
-    const data=t.reshape([h,w]).mul(255).dataSync();
+  /** Draw 28×28 tensor on canvas (scale*4) */
+  draw(t, c, s=4){
+    const [h,w]=[28,28]; c.width=w*s; c.height=h*s;
+    const ctx=c.getContext('2d');
+    const d=t.reshape([h,w]).mul(255).dataSync();
     const img=ctx.createImageData(w,h);
-    for(let i=0;i<data.length;i++){
-      const v=data[i]; img.data.set([v,v,v,255],i*4);
-    }
-    const tmp=document.createElement('canvas');
-    tmp.width=w; tmp.height=h;
+    for(let i=0;i<d.length;i++){ const v=d[i]; img.data.set([v,v,v,255],i*4); }
+    const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
     tmp.getContext('2d').putImageData(img,0,0);
-    ctx.imageSmoothingEnabled=false;
-    ctx.drawImage(tmp,0,0,canvas.width,canvas.height);
+    ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0,c.width,c.height);
     tmp.remove();
   }
 }
