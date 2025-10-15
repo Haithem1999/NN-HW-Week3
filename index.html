@@ -1,70 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>MNIST Denoiser Autoencoder (TensorFlow.js)</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { display: flex; gap: 20px; }
-        .left-column, .right-column { flex: 1; }
-        .preview-row { display: flex; gap: 10px; margin: 10px 0; }
-        .preview-item { text-align: center; }
-        canvas { border: 1px solid #ccc; image-rendering: pixelated; }
-        button { margin: 5px; padding: 8px 12px; }
-        .status { background: #f0f0f0; padding: 10px; margin: 10px 0; }
-    </style>
+  <meta charset="UTF-8">
+  <title>MNIST - CNN Denoiser Autoencoder (TensorFlow.js)</title>
+
+  <!-- CDN dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
+
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px}
+    h1{margin-top:0}
+    button,input[type=file]{margin:4px 0;padding:6px 10px}
+    .layout{display:flex;gap:24px}
+    .col{flex:1 1 0}
+    .status{background:#f5f5f5;padding:8px;margin:6px 0;border:1px solid #ddd}
+    .preview-row{display:flex;gap:8px;margin:6px 0}
+    canvas{border:1px solid #aaa;image-rendering:pixelated}
+    #preview-wrapper{border:1px solid #ddd;padding:8px}
+    #preview-wrapper h3{margin:4px 0}
+  </style>
 </head>
 <body>
-    <h1>MNIST Denoiser Autoencoder (Client-Side)</h1>
+<h1>MNIST Denoiser Autoencoder (client-side)</h1>
 
-    <div class="file-inputs">
-        <label>Upload Train CSV: <input type="file" id="trainFile" accept=".csv"></label>
-        <label>Upload Test CSV: <input type="file" id="testFile" accept=".csv"></label>
-        <button id="loadDataBtn">Load Data</button>
+<!-- FILE INPUTS -->
+<label>Train CSV <input type="file" id="trainFile" accept=".csv"></label>
+<label>Test CSV <input type="file" id="testFile"   accept=".csv"></label>
+<button id="loadData">Load&nbsp;Data</button>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+  <!-- LEFT COLUMN: controls & status -->
+  <div class="col">
+    <h2>Controls</h2>
+    <button id="trainBtn">Train Autoencoder</button>
+    <button id="evalBtn">Evaluate</button>
+    <button id="testFiveBtn">Test&nbsp;5&nbsp;Random</button><br>
+    <button id="saveBtn">Save&nbsp;Model</button><br>
+    <input type="file" id="modelJson"   accept=".json">
+    <input type="file" id="modelWeights"accept=".bin">
+    <button id="loadBtn">Load&nbsp;Model</button><br>
+    <button id="resetBtn">Reset</button>
+    <button id="visorBtn">Toggle&nbsp;Visor</button>
+
+    <div id="dataStatus"  class="status"><strong>Data:</strong> not loaded</div>
+    <div id="modelStatus" class="status"><strong>Model:</strong> none</div>
+  </div>
+
+  <!-- RIGHT COLUMN: logs & previews -->
+  <div class="col">
+    <h2>Logs</h2>
+    <pre id="logs" style="min-height:120px;background:#f8f8f8;border:1px solid #ddd;padding:6px;overflow:auto"></pre>
+
+    <div id="preview-wrapper">
+      <h3>Noisy (top) vs Denoised (bottom)</h3>
+      <div id="previewNoisy"    class="preview-row"></div>
+      <div id="previewDenoised" class="preview-row"></div>
     </div>
+  </div>
+</div>
 
-    <div class="container">
-        <div class="left-column">
-            <h2>Controls</h2>
-            <div>
-                <button id="trainBtn">Train Autoencoder</button>
-                <button id="evaluateBtn">Evaluate</button>
-                <button id="testFiveBtn">Test 5 Random</button>
-                <button id="saveModelBtn">Save Model</button>
-                <button id="resetBtn">Reset</button>
-                <button id="toggleVisorBtn">Toggle Visor</button>
-            </div>
-
-            <div style="margin-top:10px">
-                <label>Load Model JSON: <input type="file" id="modelJsonFile" accept=".json"></label>
-                <label>Load Model Weights: <input type="file" id="modelWeightsFile" accept=".bin"></label>
-                <button id="loadModelBtn">Load Model</button>
-            </div>
-
-            <div id="dataStatus" class="status">
-                <h3>Data Status</h3>
-                <p>No data loaded</p>
-            </div>
-
-            <div id="modelInfo" class="status">
-                <h3>Model Info</h3>
-                <p>No model loaded</p>
-            </div>
-        </div>
-
-        <div class="right-column">
-            <h2>Training Logs</h2>
-            <div id="trainingLogs"></div>
-
-            <h2>Random 5 Denoise Preview</h2>
-            <div id="previewNoisy" class="preview-row"></div>
-            <div id="previewDenoised" class="preview-row"></div>
-        </div>
-    </div>
-
-    <script src="data-loader.js"></script>
-    <script src="app.js"></script>
+<!-- DEFERRED SCRIPTS -->
+<script src="data-loader.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
