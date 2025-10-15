@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MNIST - CNN Denoiser Autoencoder (TensorFlow.js)</title>
+  <title>MNIST – CNN Denoiser Autoencoder (TensorFlow.js)</title>
 
-  <!-- CDN dependencies -->
+  <!-- Core libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
 
@@ -24,31 +24,30 @@
 <body>
 <h1>MNIST Denoiser Autoencoder (client-side)</h1>
 
-<!-- FILE INPUTS -->
+<!-- CSV inputs -->
 <label>Train CSV <input type="file" id="trainFile" accept=".csv"></label>
-<label>Test CSV <input type="file" id="testFile"   accept=".csv"></label>
-<button id="loadData">Load&nbsp;Data</button>
+<label>Test CSV <input type="file"  id="testFile"  accept=".csv"></label>
+<button id="loadData">Load Data</button>
 
-<!-- MAIN LAYOUT -->
 <div class="layout">
-  <!-- LEFT COLUMN: controls & status -->
+  <!-- LEFT: controls -->
   <div class="col">
     <h2>Controls</h2>
     <button id="trainBtn">Train Autoencoder</button>
     <button id="evalBtn">Evaluate</button>
-    <button id="testFiveBtn">Test&nbsp;5&nbsp;Random</button><br>
-    <button id="saveBtn">Save&nbsp;Model</button><br>
-    <input type="file" id="modelJson"   accept=".json">
-    <input type="file" id="modelWeights"accept=".bin">
-    <button id="loadBtn">Load&nbsp;Model</button><br>
+    <button id="testFiveBtn">Test 5 Random</button><br>
+    <button id="saveBtn">Save Model</button><br>
+    <input type="file" id="modelJson"    accept=".json">
+    <input type="file" id="modelWeights" accept=".bin">
+    <button id="loadBtn">Load Model</button><br>
     <button id="resetBtn">Reset</button>
-    <button id="visorBtn">Toggle&nbsp;Visor</button>
+    <button id="visorBtn">Toggle Visor</button>
 
     <div id="dataStatus"  class="status"><strong>Data:</strong> not loaded</div>
     <div id="modelStatus" class="status"><strong>Model:</strong> none</div>
   </div>
 
-  <!-- RIGHT COLUMN: logs & previews -->
+  <!-- RIGHT: logs + preview -->
   <div class="col">
     <h2>Logs</h2>
     <pre id="logs" style="min-height:120px;background:#f8f8f8;border:1px solid #ddd;padding:6px;overflow:auto"></pre>
@@ -61,7 +60,7 @@
   </div>
 </div>
 
-<!-- DEFERRED SCRIPTS -->
+<!-- App scripts -->
 <script src="data-loader.js"></script>
 <script src="app.js"></script>
 </body>
