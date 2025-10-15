@@ -1,143 +1,122 @@
 /* =========================================================================
-   app.js  –  UI wiring, CNN autoencoder training & noisy→clean preview
+   app.js – full workflow (noise, train, preview, save / reload)
    ========================================================================= */
 
-const q = id => document.getElementById(id);
-const log = msg => { q('logs').textContent += msg+'\n'; };
+const $ = id => document.getElementById(id);
+const log = m => { $('logs').textContent += m + '\n'; };
 
 let dl, model;
-let trainXs, valXs, noisyTrain, noisyVal;
-let testXs,  noisyTest;
+let trainXs, valXs, noisyTrain, noisyVal, testXs;
 
-/* ----- misc helpers ----- */
-function updateStatus(){
-  q('dataStatus').innerHTML  = `<strong>Data:</strong> ${trainXs?'loaded':'not loaded'}`;
-  q('modelStatus').innerHTML = `<strong>Model:</strong> ${model?'ready':'none'}`;
+function status(){
+  $('dataStatus').innerHTML  = `<strong>Data:</strong> ${trainXs?'loaded':'not loaded'}`;
+  $('modelStatus').innerHTML = `<strong>Model:</strong> ${model?'ready':'none'}`;
 }
 
-/* ========================================================================
-   1. LOAD DATA
-   ====================================================================== */
-q('loadData').onclick = async ()=>{
-  const fTrain = q('trainFile').files[0];
-  const fTest  = q('testFile').files[0];
-  if(!fTrain||!fTest){ alert('Select BOTH train & test CSV files'); return; }
+/* --------------------------------------------------------------------- */
+/* 1️⃣  LOAD DATA + build noisy train/val                                */
+/* --------------------------------------------------------------------- */
+$('loadData').onclick = async ()=>{
+  const fTr = $('trainFile').files[0];
+  const fTe = $('testFile').files[0];
+  if(!fTr||!fTe) return alert('Select BOTH CSV files');
 
   try{
-    log('📥 Parsing CSV files …');
+    log('📥 Parsing CSVs …');
     if(dl){ dl.train?.xs.dispose(); dl.test?.xs.dispose(); }
     dl = new MNISTDataLoader();
 
-    const train = await dl.loadTrain(fTrain);   // {xs,ys}
-    const test  = await dl.loadTest (fTest);
+    const tr = await dl.loadTrain(fTr);
+    const te = await dl.loadTest (fTe);
 
-    ({ trainXs, valXs } = dl.split(train.xs, train.ys, 0.1));
+    ({ trainXs, valXs } = dl.split(tr.xs, tr.ys, 0.1));
     noisyTrain = dl.addNoise(trainXs,0.5);
     noisyVal   = dl.addNoise(valXs,0.5);
-    testXs     = test.xs;
-    noisyTest  = dl.addNoise(testXs,0.5);
+    testXs     = te.xs;
 
-    log(`✔ Data ready – train ${trainXs.shape[0]}, val ${valXs.shape[0]}, test ${testXs.shape[0]}`);
-    updateStatus();
-  }catch(err){
-    console.error(err); alert('Failed to load data: '+err.message);
-  }
+    log(`✔ Data ready: train ${trainXs.shape[0]}, val ${valXs.shape[0]}, test ${testXs.shape[0]}`);
+    status();
+  }catch(e){ console.error(e); alert('Load failed: '+e.message); }
 };
 
-/* ========================================================================
-   2. BUILD MODEL
-   ====================================================================== */
-function buildAutoencoder(){
+/* --------------------------------------------------------------------- */
+/* 2️⃣  Build CNN autoencoder                                            */
+/* --------------------------------------------------------------------- */
+function buildAE(){
   const inp = tf.input({shape:[28,28,1]});
-  // encoder
-  let x = tf.layers.conv2d({filters:32,kernelSize:3,activation:'relu',padding:'same'}).apply(inp);
+  let x = tf.layers.conv2d({filters:32,kernelSize:3,padding:'same',activation:'relu'}).apply(inp);
   x = tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
-  x = tf.layers.conv2d({filters:64,kernelSize:3,activation:'relu',padding:'same'}).apply(x);
+  x = tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu'}).apply(x);
   x = tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
-  // decoder
-  x = tf.layers.conv2dTranspose({filters:64,kernelSize:3,strides:2,activation:'relu',padding:'same'}).apply(x);
-  x = tf.layers.conv2dTranspose({filters:32,kernelSize:3,strides:2,activation:'relu',padding:'same'}).apply(x);
-  const out = tf.layers.conv2d({filters:1,kernelSize:3,activation:'sigmoid',padding:'same'}).apply(x);
-
+  x = tf.layers.conv2dTranspose({filters:64,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
+  x = tf.layers.conv2dTranspose({filters:32,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
+  const out = tf.layers.conv2d({filters:1,kernelSize:3,padding:'same',activation:'sigmoid'}).apply(x);
   const m = tf.model({inputs:inp,outputs:out});
   m.compile({optimizer:'adam',loss:'meanSquaredError'});
   return m;
 }
 
-/* ========================================================================
-   3. TRAIN
-   ====================================================================== */
-q('trainBtn').onclick = async ()=>{
-  if(!trainXs){ alert('Load data first'); return; }
+/*  TRAIN */
+$('trainBtn').onclick = async ()=>{
+  if(!trainXs) return alert('Load data first');
   if(model) model.dispose();
-  model = buildAutoencoder(); updateStatus();
+  model = buildAE(); status();
 
   log('🏋️ Training …');
   await model.fit(noisyTrain, trainXs,{
-    epochs:10,batchSize:128,shuffle:true,
-    validationData:[noisyVal,valXs],
-    callbacks: tfvis.show.fitCallbacks(
-      {name:'Autoencoder Training',tab:'Charts'},
-      ['loss','val_loss'],{callbacks:['onEpochEnd']}
-    )
+    epochs:10,batchSize:128,shuffle:true,validationData:[noisyVal,valXs],
+    callbacks: tfvis.show.fitCallbacks({name:'Train',tab:'Charts'},['loss','val_loss'])
   });
   log('✔ Training complete');
 };
 
-/* ========================================================================
-   4. EVALUATE
-   ====================================================================== */
-q('evalBtn').onclick = async ()=>{
-  if(!model||!noisyTest){ alert('Need model & data'); return; }
-  const mse=(await model.evaluate(noisyTest,testXs).data())[0];
+/* --------------------------------------------------------------------- */
+/* 3️⃣  Evaluate & Preview 5 random (on-the-fly noisy test)              */
+/* --------------------------------------------------------------------- */
+$('evalBtn').onclick = async ()=>{
+  if(!model) return alert('Train or load a model first');
+  const noisyEval = dl.addNoise(testXs,0.5);      // new noise each eval
+  const mse = (await model.evaluate(noisyEval,testXs).data())[0];
+  noisyEval.dispose();
   log(`📊 Test MSE: ${mse.toFixed(4)}`);
 };
 
-/* ========================================================================
-   5. PREVIEW 5 RANDOM
-   ====================================================================== */
-q('testFiveBtn').onclick = ()=>{
-  if(!model||!noisyTest){ alert('Need model & data'); return; }
-  ['previewNoisy','previewDenoised'].forEach(el=>q(el).innerHTML='');
+$('testFiveBtn').onclick = ()=>{
+  if(!model) return alert('Need trained model');
+  ['previewNoisy','previewDenoised'].forEach(id=>$(id).innerHTML='');
 
+  /* fresh noise & random 5 indices */
+  const noisyFull = dl.addNoise(testXs,0.5);
   const idx = tf.util.createShuffledIndices(testXs.shape[0]).slice(0,5);
   const idxT = tf.tensor1d(idx,'int32');
-  const batchNoisy = tf.gather(noisyTest,idxT);
-  const denoised   = model.predict(batchNoisy);
+  const noisyBatch = tf.gather(noisyFull,idxT);
 
-  const noisyArr    = batchNoisy.unstack();
-  const denoisedArr = denoised.unstack();
+  const cleanPred = model.predict(noisyBatch);
 
-  noisyArr.forEach(t=>{
-    const c=document.createElement('canvas');
-    dl.drawTensorToCanvas(t,c,4);
-    q('previewNoisy').appendChild(c);
-  });
-  denoisedArr.forEach(t=>{
-    const c=document.createElement('canvas');
-    dl.drawTensorToCanvas(t,c,4);
-    q('previewDenoised').appendChild(c);
-  });
+  const noisyArr = noisyBatch.unstack();
+  const denArr   = cleanPred.unstack();
+  noisyArr.forEach(t=>{ const c=document.createElement('canvas'); dl.draw(t,c); $('previewNoisy').appendChild(c); });
+  denArr  .forEach(t=>{ const c=document.createElement('canvas'); dl.draw(t,c); $('previewDenoised').appendChild(c); });
 
-  noisyArr.forEach(t=>t.dispose()); denoisedArr.forEach(t=>t.dispose());
-  batchNoisy.dispose(); denoised.dispose(); idxT.dispose();
+  [noisyArr,denArr].flat().forEach(t=>t.dispose());
+  noisyBatch.dispose(); cleanPred.dispose(); noisyFull.dispose(); idxT.dispose();
 };
 
-/* ========================================================================
-   6. SAVE / LOAD
-   ====================================================================== */
-q('saveBtn').onclick = ()=>{ if(model) model.save('downloads://mnist-dae'); else alert('No model'); };
+/* --------------------------------------------------------------------- */
+/* 4️⃣  Save & Reload                                                    */
+/* --------------------------------------------------------------------- */
+$('saveBtn').onclick = ()=> model ? model.save('downloads://mnist-dae') : alert('No model');
 
-q('loadBtn').onclick = async ()=>{
-  const j=q('modelJson').files[0], b=q('modelWeights').files[0];
-  if(!j||!b){ alert('Select model files'); return; }
+$('loadBtn').onclick = async ()=>{
+  const j=$('modelJson').files[0], b=$('modelWeights').files[0];
+  if(!j||!b) return alert('Pick JSON & BIN');
   if(model) model.dispose();
   model = await tf.loadLayersModel(tf.io.browserFiles([j,b]));
-  log('✔ Model loaded'); updateStatus();
+  log('✔ Model loaded'); status();
 };
 
-/* ========================================================================
-   7. UTIL
-   ====================================================================== */
-q('resetBtn').onclick = ()=> location.reload();
-q('visorBtn').onclick = ()=> tfvis.visor().toggle();
+/* --------------------------------------------------------------------- */
+/* util buttons                                                          */
+/* --------------------------------------------------------------------- */
+$('resetBtn').onclick = ()=> location.reload();
+$('visorBtn').onclick = ()=> tfvis.visor().toggle();
