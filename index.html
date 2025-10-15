@@ -1,67 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>MNIST CNN Demo (TensorFlow.js)</title>
-
-  <!-- TensorFlow.js & tfjs-vis CDNs -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
-
-  <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:1rem;box-sizing:border-box}
-    h2{margin:0.5rem 0}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-    button,input[type="file"]{margin:0.25rem 0}
-    #random-preview{display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;overflow-x:auto}
-    #random-preview canvas{border:1px solid #ccc}
-    .label{text-align:center;font-weight:bold;font-size:0.9rem}
-    #visor-toggle{margin-left:0.5rem}
-    pre{white-space:pre-wrap}
-  </style>
+    <title>MNIST CNN with TensorFlow.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; gap: 20px; }
+        .left-column, .right-column { flex: 1; }
+        .preview-row { display: flex; gap: 10px; margin: 10px 0; }
+        .preview-item { text-align: center; }
+        canvas { border: 1px solid #ccc; image-rendering: pixelated; }
+        .correct { color: green; font-weight: bold; }
+        .wrong { color: red; font-weight: bold; }
+        button { margin: 5px; padding: 8px 12px; }
+        .file-inputs { margin: 10px 0; }
+        .status { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
 </head>
 <body>
-  <h2>Client-Side MNIST CNN Demo</h2>
-
-  <!-- Controls & status (left) — visualisations (right) -->
-  <div class="grid">
-    <!-- LEFT COLUMN -->
-    <div>
-      <h3>Data</h3>
-      <input type="file" id="train-csv" accept=".csv"><br>
-      <input type="file" id="test-csv"  accept=".csv"><br>
-      <button id="load-data">Load Data</button>
-      <div id="data-status"></div>
-
-      <h3>Model & Training</h3>
-      <button id="train-btn">Train</button>
-      <button id="evaluate-btn">Evaluate</button>
-      <button id="test-five-btn">Test 5 Random</button><br>
-      <button id="save-model-btn">Save Model (Download)</button><br>
-      <input type="file" id="upload-json"   accept=".json">
-      <input type="file" id="upload-weights" accept=".bin">
-      <button id="load-model-btn">Load Model (From Files)</button><br>
-      <button id="reset-btn">Reset</button>
-      <button id="visor-toggle">Toggle Visor</button>
-
-      <h3>Training Logs</h3>
-      <pre id="train-logs"></pre>
-
-      <h3>Model Info</h3>
-      <pre id="model-info"></pre>
+    <h1>MNIST CNN Training (Client-Side)</h1>
+    
+    <div class="file-inputs">
+        <label>Upload Train CSV: <input type="file" id="trainFile" accept=".csv"></label>
+        <label>Upload Test CSV: <input type="file" id="testFile" accept=".csv"></label>
+        <button id="loadDataBtn">Load Data</button>
     </div>
 
-    <!-- RIGHT COLUMN -->
-    <div>
-      <h3>Metrics & Charts</h3>
-      <div id="metrics"></div>
-      <h3>Random 5 Preview</h3>
-      <div id="random-preview"></div>
-    </div>
-  </div>
+    <div class="container">
+        <div class="left-column">
+            <h2>Controls</h2>
+            <div>
+                <button id="trainBtn">Train</button>
+                <button id="evaluateBtn">Evaluate</button>
+                <button id="testFiveBtn">Test 5 Random</button>
+                <button id="saveModelBtn">Save Model</button>
+                <button id="resetBtn">Reset</button>
+                <button id="toggleVisorBtn">Toggle Visor</button>
+            </div>
+            
+            <div>
+                <label>Load Model JSON: <input type="file" id="modelJsonFile" accept=".json"></label>
+                <label>Load Model Weights: <input type="file" id="modelWeightsFile" accept=".bin"></label>
+                <button id="loadModelBtn">Load Model</button>
+            </div>
 
-  <!-- Defer-loaded app scripts -->
-  <script defer src="data-loader.js"></script>
-  <script defer src="app.js"></script>
+            <div id="dataStatus" class="status">
+                <h3>Data Status</h3>
+                <p>No data loaded</p>
+            </div>
+
+            <div id="modelInfo" class="status">
+                <h3>Model Info</h3>
+                <p>No model loaded</p>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <h2>Training Logs</h2>
+            <div id="trainingLogs"></div>
+            
+            <h2>Random 5 Preview</h2>
+            <div id="previewContainer" class="preview-row"></div>
+        </div>
+    </div>
+
+    <script src="data-loader.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
