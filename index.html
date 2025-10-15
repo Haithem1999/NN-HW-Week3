@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MNIST CNN Demo (TensorFlow.js)</title>
+
+  <!-- TensorFlow.js & tfjs-vis CDNs -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
+
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:1rem;box-sizing:border-box}
+    h2{margin:0.5rem 0}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    button,input[type="file"]{margin:0.25rem 0}
+    #random-preview{display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;overflow-x:auto}
+    #random-preview canvas{border:1px solid #ccc}
+    .label{text-align:center;font-weight:bold;font-size:0.9rem}
+    #visor-toggle{margin-left:0.5rem}
+    pre{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <h2>Client-Side MNIST CNN Demo</h2>
+
+  <!-- Controls & status (left) — visualisations (right) -->
+  <div class="grid">
+    <!-- LEFT COLUMN -->
+    <div>
+      <h3>Data</h3>
+      <input type="file" id="train-csv" accept=".csv"><br>
+      <input type="file" id="test-csv"  accept=".csv"><br>
+      <button id="load-data">Load Data</button>
+      <div id="data-status"></div>
+
+      <h3>Model & Training</h3>
+      <button id="train-btn">Train</button>
+      <button id="evaluate-btn">Evaluate</button>
+      <button id="test-five-btn">Test 5 Random</button><br>
+      <button id="save-model-btn">Save Model (Download)</button><br>
+      <input type="file" id="upload-json"   accept=".json">
+      <input type="file" id="upload-weights" accept=".bin">
+      <button id="load-model-btn">Load Model (From Files)</button><br>
+      <button id="reset-btn">Reset</button>
+      <button id="visor-toggle">Toggle Visor</button>
+
+      <h3>Training Logs</h3>
+      <pre id="train-logs"></pre>
+
+      <h3>Model Info</h3>
+      <pre id="model-info"></pre>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <h3>Metrics & Charts</h3>
+      <div id="metrics"></div>
+      <h3>Random 5 Preview</h3>
+      <div id="random-preview"></div>
+    </div>
+  </div>
+
+  <!-- Defer-loaded app scripts -->
+  <script defer src="data-loader.js"></script>
+  <script defer src="app.js"></script>
+</body>
+</html>
