@@ -49,102 +49,19 @@ $('loadData').onclick = async ()=>{
   }
 };
 
-/* 2. BUILD MODEL - Stable sequential architecture -------------------- */
+/* 2. BUILD MODEL ------------------------------------------------------- */
 function buildAE(){
-  const model = tf.sequential();
-  
-  // Encoder
-  model.add(tf.layers.conv2d({
-    inputShape: [28, 28, 1],
-    filters: 32,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  model.add(tf.layers.conv2d({
-    filters: 32,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  model.add(tf.layers.maxPooling2d({
-    poolSize: 2,
-    padding: 'same'
-  }));
-  
-  model.add(tf.layers.conv2d({
-    filters: 64,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  model.add(tf.layers.conv2d({
-    filters: 64,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  model.add(tf.layers.maxPooling2d({
-    poolSize: 2,
-    padding: 'same'
-  }));
-  
-  // Bottleneck
-  model.add(tf.layers.conv2d({
-    filters: 128,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  
-  // Decoder
-  model.add(tf.layers.upSampling2d({
-    size: [2, 2]
-  }));
-  model.add(tf.layers.conv2d({
-    filters: 64,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  model.add(tf.layers.conv2d({
-    filters: 64,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  
-  model.add(tf.layers.upSampling2d({
-    size: [2, 2]
-  }));
-  model.add(tf.layers.conv2d({
-    filters: 32,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  model.add(tf.layers.conv2d({
-    filters: 32,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'relu'
-  }));
-  
-  // Output
-  model.add(tf.layers.conv2d({
-    filters: 1,
-    kernelSize: 3,
-    padding: 'same',
-    activation: 'sigmoid'
-  }));
-  
-  model.compile({
-    optimizer: tf.train.adam(0.001),
-    loss: 'meanSquaredError',
-    metrics: ['mse']
-  });
-  
-  return model;
+  const i=tf.input({shape:[28,28,1]});
+  let x=tf.layers.conv2d({filters:32,kernelSize:3,padding:'same',activation:'relu'}).apply(i);
+  x=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
+  x=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu'}).apply(x);
+  x=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
+  x=tf.layers.conv2dTranspose({filters:64,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
+  x=tf.layers.conv2dTranspose({filters:32,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
+  const o=tf.layers.conv2d({filters:1,kernelSize:3,padding:'same',activation:'sigmoid'}).apply(x);
+  const m=tf.model({inputs:i,outputs:o});
+  m.compile({optimizer:'adam',loss:'meanSquaredError'});
+  return m;
 }
 
 /* 3. TRAIN ------------------------------------------------------------- */
@@ -160,21 +77,15 @@ $('trainBtn').onclick = async ()=>{
     model=buildAE(); 
     status();
     log('🏋️ Training CNN Autoencoder for denoising…');
-    log('   Architecture: Sequential model with stable layers');
+    log('   Architecture: Encoder-Decoder with UpSampling (WebGL-safe)');
     log('   Input: Noisy images → Output: Clean images');
     
     await model.fit(noisyTrain,trainXs,{
-      epochs:25,
+      epochs:10,
       batchSize:128,
       shuffle:true,
       validationData:[noisyVal,valXs],
-      callbacks:{
-        onEpochEnd: (epoch, logs) => {
-          if((epoch+1)%5===0){
-            log(`   Epoch ${epoch+1}/25 - loss: ${logs.loss.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}`);
-          }
-        }
-      }
+      callbacks:tfvis.show.fitCallbacks({name:'Training',tab:'Charts'},['loss','val_loss'])
     });
     
     log('✔ Training complete');
@@ -199,10 +110,7 @@ $('evalBtn').onclick = async ()=>{
   }
   
   try{
-    const result = await model.evaluate(persistentNoisyTest,testXs);
-    const mse = Array.isArray(result) ? (await result[0].data())[0] : (await result.data())[0];
-    if(Array.isArray(result)) result.forEach(t => t.dispose());
-    else result.dispose();
+    const mse=(await model.evaluate(persistentNoisyTest,testXs).data())[0];
     log(`📊 MSE on noisy test set: ${mse.toFixed(4)}`);
   }catch(e){
     log('❌ Evaluation ERROR: '+e.message);
@@ -234,6 +142,7 @@ $('testFiveBtn').onclick = async ()=>{
     const totalImages = testXs.shape[0];
     log(`   Total test images available: ${totalImages}`);
     
+    // Fix: Convert TypedArray to regular array
     const shuffled = tf.util.createShuffledIndices(totalImages);
     const selectedIndices = [];
     for(let i=0; i<5; i++){
@@ -247,12 +156,6 @@ $('testFiveBtn').onclick = async ()=>{
     
     const denoised = model.predict(noisyBatch);
     log('   ✔ Model prediction complete');
-    
-    // Debug: Check output values
-    const denoisedMin = denoised.min().dataSync()[0];
-    const denoisedMax = denoised.max().dataSync()[0];
-    const denoisedMean = denoised.mean().dataSync()[0];
-    log(`   📊 Denoised stats - min: ${denoisedMin.toFixed(4)}, max: ${denoisedMax.toFixed(4)}, mean: ${denoisedMean.toFixed(4)}`);
 
     const noisyArr = noisyBatch.unstack();
     const denArr = denoised.unstack();
