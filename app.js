@@ -3,7 +3,7 @@
    ========================================================================= */
 
 const $ = id=>document.getElementById(id);
-const log = m=>{$('logs').textContent+=m+'\n';};
+const log = m=>{$('logs').textContent+=m+'\n'; console.log(m);};
 
 let dl, model;
 let trainXs,valXs,noisyTrain,noisyVal,testXs;
@@ -42,7 +42,11 @@ $('loadData').onclick = async ()=>{
     log(`✔ Data ready – train ${trainXs.shape[0]} / val ${valXs.shape[0]} / test ${testXs.shape[0]}`);
     log('✔ Noise added to train/val/test data (noise factor: 0.5)');
     status();
-  }catch(e){alert(e.message);}
+  }catch(e){
+    log('❌ ERROR: '+e.message);
+    alert(e.message);
+    console.error(e);
+  }
 };
 
 /* 2. BUILD MODEL ------------------------------------------------------- */
@@ -68,93 +72,178 @@ function buildAE(){
 
 /* 3. TRAIN ------------------------------------------------------------- */
 $('trainBtn').onclick = async ()=>{
-  if(!trainXs) return alert('Load data first');
-  if(model) model.dispose();
+  if(!trainXs) {
+    alert('Load data first');
+    log('❌ Cannot train: No data loaded');
+    return;
+  }
   
-  // Step 2: Train the CNN autoencoder
-  model=buildAE(); 
-  status();
-  log('🏋️ Training CNN Autoencoder for denoising…');
-  log('   Input: Noisy images → Output: Clean images');
-  
-  await model.fit(noisyTrain,trainXs,{
-    epochs:10,
-    batchSize:128,
-    shuffle:true,
-    validationData:[noisyVal,valXs],
-    callbacks:tfvis.show.fitCallbacks({name:'Training',tab:'Charts'},['loss','val_loss'])
-  });
-  
-  log('✔ Training complete');
+  try{
+    if(model) model.dispose();
+    
+    // Step 2: Train the CNN autoencoder
+    model=buildAE(); 
+    status();
+    log('🏋️ Training CNN Autoencoder for denoising…');
+    log('   Input: Noisy images → Output: Clean images');
+    
+    await model.fit(noisyTrain,trainXs,{
+      epochs:10,
+      batchSize:128,
+      shuffle:true,
+      validationData:[noisyVal,valXs],
+      callbacks:tfvis.show.fitCallbacks({name:'Training',tab:'Charts'},['loss','val_loss'])
+    });
+    
+    log('✔ Training complete');
+  }catch(e){
+    log('❌ Training ERROR: '+e.message);
+    alert('Training error: '+e.message);
+    console.error(e);
+  }
 };
 
 /* 4. EVALUATE ---------------------------------------------------------- */
 $('evalBtn').onclick = async ()=>{
-  if(!model) return alert('Train / load model first');
-  if(!persistentNoisyTest) return alert('Load data first');
+  if(!model) {
+    alert('Train / load model first');
+    log('❌ Cannot evaluate: No model');
+    return;
+  }
+  if(!persistentNoisyTest) {
+    alert('Load data first');
+    log('❌ Cannot evaluate: No test data');
+    return;
+  }
   
-  const mse=(await model.evaluate(persistentNoisyTest,testXs).data())[0];
-  log(`📊 MSE on noisy test set: ${mse.toFixed(4)}`);
+  try{
+    const mse=(await model.evaluate(persistentNoisyTest,testXs).data())[0];
+    log(`📊 MSE on noisy test set: ${mse.toFixed(4)}`);
+  }catch(e){
+    log('❌ Evaluation ERROR: '+e.message);
+    alert('Evaluation error: '+e.message);
+    console.error(e);
+  }
 };
 
 /* 5. PREVIEW - Step 3: Display denoising results for 5 random images -- */
 $('testFiveBtn').onclick = async ()=>{
-  if(!model) return alert('Need trained model');
-  if(!persistentNoisyTest) return alert('Load data first');
+  log('🎲 Test 5 Random button clicked...');
   
-  // Clear previous previews
-  ['previewNoisy','previewDenoised'].forEach(id=>$(id).innerHTML='');
-
-  // Step 3: Select 5 random images from test set
-  const idx=tf.util.createShuffledIndices(testXs.shape[0]).slice(0,5);
-  const idxT=tf.tensor1d(idx,'int32');
-  
-  // Get the persistent noisy versions (same noise each time)
-  const noisyBatch=tf.gather(persistentNoisyTest,idxT);
-  
-  // Denoise using trained model
-  const denoised=model.predict(noisyBatch);
-
-  // Display results
-  const noisyArr=noisyBatch.unstack(), denArr=denoised.unstack();
-  for(let i=0;i<5;i++){
-    const cnvN=document.createElement('canvas');
-    await dl.draw(noisyArr[i],cnvN); 
-    $('previewNoisy').appendChild(cnvN);
-    
-    const cnvD=document.createElement('canvas');
-    await dl.draw(denArr[i],cnvD);  
-    $('previewDenoised').appendChild(cnvD);
+  // Check prerequisites
+  if(!model) {
+    alert('Need trained model. Please train or load a model first.');
+    log('❌ Cannot preview: No model loaded/trained');
+    return;
+  }
+  if(!persistentNoisyTest) {
+    alert('Load data first. Please load CSV files.');
+    log('❌ Cannot preview: No test data loaded');
+    return;
+  }
+  if(!testXs) {
+    alert('Test data not available');
+    log('❌ Cannot preview: testXs is null');
+    return;
   }
   
-  [noisyArr,denArr].flat().forEach(t=>t.dispose());
-  noisyBatch.dispose(); 
-  denoised.dispose(); 
-  idxT.dispose();
-  
-  log('✔ Displayed denoising results for 5 random test images');
+  try{
+    log('✔ Starting preview generation...');
+    
+    // Clear previous previews
+    ['previewNoisy','previewDenoised'].forEach(id=>$(id).innerHTML='');
+
+    // Step 3: Select 5 random images from test set
+    const totalImages = testXs.shape[0];
+    log(`   Total test images available: ${totalImages}`);
+    
+    const idx=Array.from(tf.util.createShuffledIndices(totalImages).slice(0,5));
+    log(`   Selected indices: ${idx.join(', ')}`);
+    
+    const idxT=tf.tensor1d(idx,'int32');
+    
+    // Get the persistent noisy versions (same noise each time)
+    const noisyBatch=tf.gather(persistentNoisyTest,idxT);
+    log('   ✔ Gathered noisy batch');
+    
+    // Denoise using trained model
+    const denoised=model.predict(noisyBatch);
+    log('   ✔ Model prediction complete');
+
+    // Display results
+    const noisyArr=noisyBatch.unstack();
+    const denArr=denoised.unstack();
+    log('   ✔ Unstacked tensors, rendering to canvas...');
+    
+    for(let i=0;i<5;i++){
+      const cnvN=document.createElement('canvas');
+      await dl.draw(noisyArr[i],cnvN); 
+      $('previewNoisy').appendChild(cnvN);
+      
+      const cnvD=document.createElement('canvas');
+      await dl.draw(denArr[i],cnvD);  
+      $('previewDenoised').appendChild(cnvD);
+    }
+    
+    // Cleanup
+    [noisyArr,denArr].flat().forEach(t=>t.dispose());
+    noisyBatch.dispose(); 
+    denoised.dispose(); 
+    idxT.dispose();
+    
+    log('✔ Successfully displayed denoising results for 5 random test images');
+  }catch(e){
+    log('❌ Preview ERROR: '+e.message);
+    alert('Error generating preview: '+e.message);
+    console.error('Full error:', e);
+  }
 };
 
 /* 6. SAVE / LOAD - Step 4: Save and reload model ---------------------- */
 $('saveBtn').onclick = ()=> {
-  if(!model) return alert('No model to save');
-  // Step 4: Save the trained model
-  model.save('downloads://mnist-dae');
-  log('✔ Model saved as mnist-dae.json and mnist-dae.weights.bin');
+  if(!model) {
+    alert('No model to save');
+    log('❌ Cannot save: No model');
+    return;
+  }
+  try{
+    // Step 4: Save the trained model
+    model.save('downloads://mnist-dae');
+    log('✔ Model saved as mnist-dae.json and mnist-dae.weights.bin');
+  }catch(e){
+    log('❌ Save ERROR: '+e.message);
+    alert('Save error: '+e.message);
+    console.error(e);
+  }
 };
 
 $('loadBtn').onclick = async ()=>{
   const j=$('modelJson').files[0], b=$('modelWeights').files[0];
-  if(!j||!b) return alert('Pick both files (JSON + weights)'); 
+  if(!j||!b) {
+    alert('Pick both files (JSON + weights)');
+    log('❌ Cannot load: Need both JSON and weights files');
+    return;
+  }
   
-  if(model) model.dispose();
-  
-  // Step 4: Load the saved model to verify results
-  model=await tf.loadLayersModel(tf.io.browserFiles([j,b])); 
-  log('✔ Model loaded successfully - ready for verification');
-  status();
+  try{
+    if(model) model.dispose();
+    
+    // Step 4: Load the saved model to verify results
+    log('📥 Loading model from files...');
+    model=await tf.loadLayersModel(tf.io.browserFiles([j,b])); 
+    log('✔ Model loaded successfully - ready for verification');
+    status();
+  }catch(e){
+    log('❌ Load ERROR: '+e.message);
+    alert('Load error: '+e.message);
+    console.error(e);
+  }
 };
 
 /* util ----------------------------------------------------------------- */
 $('resetBtn').onclick = ()=> location.reload();
 $('visorBtn').onclick = ()=> tfvis.visor().toggle();
+
+// Initial status
+status();
+log('🚀 Application ready. Load CSV files to begin.');
