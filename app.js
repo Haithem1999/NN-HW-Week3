@@ -14,6 +14,21 @@ function status(){
   $('modelStatus').innerHTML = `<strong>Model:</strong> ${model?'ready':'none'}`;
 }
 
+// Initialize TensorFlow.js backend properly
+async function initTF(){
+  try {
+    await tf.ready();
+    await tf.setBackend('webgl');
+    // Configure WebGL for better compatibility
+    tf.env().set('WEBGL_PACK', false);
+    tf.env().set('WEBGL_FORCE_F16_TEXTURES', false);
+    tf.env().set('WEBGL_RENDER_FLOAT32_CAPABLE', true);
+    log(`✔ TensorFlow.js initialized - Backend: ${tf.getBackend()}`);
+  } catch(e) {
+    log('⚠️ WebGL setup warning: '+e.message);
+  }
+}
+
 /* 1. LOAD DATA --------------------------------------------------------- */
 $('loadData').onclick = async ()=>{
   const fTr=$('trainFile').files[0], fTe=$('testFile').files[0];
@@ -49,19 +64,102 @@ $('loadData').onclick = async ()=>{
   }
 };
 
-/* 2. BUILD MODEL ------------------------------------------------------- */
+/* 2. BUILD MODEL - U-Net architecture ---------------------------------- */
 function buildAE(){
-  const i=tf.input({shape:[28,28,1]});
-  let x=tf.layers.conv2d({filters:32,kernelSize:3,padding:'same',activation:'relu'}).apply(i);
-  x=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
-  x=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu'}).apply(x);
-  x=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
-  x=tf.layers.conv2dTranspose({filters:64,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
-  x=tf.layers.conv2dTranspose({filters:32,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
-  const o=tf.layers.conv2d({filters:1,kernelSize:3,padding:'same',activation:'sigmoid'}).apply(x);
-  const m=tf.model({inputs:i,outputs:o});
-  m.compile({optimizer:'adam',loss:'meanSquaredError'});
-  return m;
+  const model = tf.sequential();
+  
+  // Encoder
+  model.add(tf.layers.conv2d({
+    inputShape: [28, 28, 1],
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.maxPooling2d({
+    poolSize: 2,
+    padding: 'same'
+  }));
+  
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.maxPooling2d({
+    poolSize: 2,
+    padding: 'same'
+  }));
+  
+  // Bottleneck
+  model.add(tf.layers.conv2d({
+    filters: 128,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  
+  // Decoder - Using upSampling2d + conv2d (equivalent to transposed convolution)
+  model.add(tf.layers.upSampling2d({
+    size: [2, 2]
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  
+  model.add(tf.layers.upSampling2d({
+    size: [2, 2]
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  
+  // Output
+  model.add(tf.layers.conv2d({
+    filters: 1,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'sigmoid'
+  }));
+  
+  model.compile({
+    optimizer: tf.train.adam(0.001),
+    loss: 'meanSquaredError',
+    metrics: ['mse']
+  });
+  
+  return model;
 }
 
 /* 3. TRAIN ------------------------------------------------------------- */
@@ -76,23 +174,60 @@ $('trainBtn').onclick = async ()=>{
     if(model) model.dispose();
     model=buildAE(); 
     status();
-    log('🏋️ Training CNN Autoencoder for denoising…');
-    log('   Architecture: Encoder-Decoder with UpSampling (WebGL-safe)');
+    log('🏋️ Training U-Net CNN Autoencoder for denoising…');
+    log('   Architecture: Double-conv encoder-decoder (32→64→128→64→32)');
     log('   Input: Noisy images → Output: Clean images');
     
     await model.fit(noisyTrain,trainXs,{
-      epochs:10,
+      epochs:20,
       batchSize:128,
       shuffle:true,
       validationData:[noisyVal,valXs],
-      callbacks:tfvis.show.fitCallbacks({name:'Training',tab:'Charts'},['loss','val_loss'])
+      callbacks:{
+        onEpochEnd: (epoch, logs) => {
+          if((epoch+1)%5===0 || epoch===0){
+            log(`   Epoch ${epoch+1}/20 - loss: ${logs.loss.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}`);
+          }
+        }
+      }
     });
     
     log('✔ Training complete');
   }catch(e){
     log('❌ Training ERROR: '+e.message);
-    alert('Training error: '+e.message);
-    console.error(e);
+    console.error('Full error:', e);
+    
+    // Try fallback to CPU backend if WebGL fails
+    if(e.message.includes('shader') || e.message.includes('WebGL')){
+      log('⚠️ WebGL error detected. Trying CPU fallback...');
+      try{
+        await tf.setBackend('cpu');
+        log('✔ Switched to CPU backend. Retrying training...');
+        if(model) model.dispose();
+        model = buildAE();
+        status();
+        
+        await model.fit(noisyTrain,trainXs,{
+          epochs:20,
+          batchSize:64, // Smaller batch for CPU
+          shuffle:true,
+          validationData:[noisyVal,valXs],
+          callbacks:{
+            onEpochEnd: (epoch, logs) => {
+              if((epoch+1)%5===0 || epoch===0){
+                log(`   Epoch ${epoch+1}/20 - loss: ${logs.loss.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}`);
+              }
+            }
+          }
+        });
+        log('✔ Training complete (CPU backend)');
+      }catch(e2){
+        log('❌ CPU fallback also failed: '+e2.message);
+        alert('Training failed. Check console for details.');
+      }
+    } else {
+      alert('Training error: '+e.message);
+    }
   }
 };
 
@@ -110,7 +245,10 @@ $('evalBtn').onclick = async ()=>{
   }
   
   try{
-    const mse=(await model.evaluate(persistentNoisyTest,testXs).data())[0];
+    const result = await model.evaluate(persistentNoisyTest,testXs);
+    const mse = Array.isArray(result) ? (await result[0].data())[0] : (await result.data())[0];
+    if(Array.isArray(result)) result.forEach(t => t.dispose());
+    else result.dispose();
     log(`📊 MSE on noisy test set: ${mse.toFixed(4)}`);
   }catch(e){
     log('❌ Evaluation ERROR: '+e.message);
@@ -142,7 +280,6 @@ $('testFiveBtn').onclick = async ()=>{
     const totalImages = testXs.shape[0];
     log(`   Total test images available: ${totalImages}`);
     
-    // Fix: Convert TypedArray to regular array
     const shuffled = tf.util.createShuffledIndices(totalImages);
     const selectedIndices = [];
     for(let i=0; i<5; i++){
@@ -226,5 +363,8 @@ $('loadBtn').onclick = async ()=>{
 $('resetBtn').onclick = ()=> location.reload();
 $('visorBtn').onclick = ()=> tfvis.visor().toggle();
 
-status();
-log('🚀 Application ready. Load CSV files to begin.');
+// Initialize on load
+initTF().then(() => {
+  status();
+  log('🚀 Application ready. Load CSV files to begin.');
+});
