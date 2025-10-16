@@ -27,6 +27,8 @@
     .instructions h3{margin-top:0;color:#856404}
     .instructions ol{margin:8px 0;padding-left:20px}
     .instructions li{margin:6px 0}
+    .warning{background:#ffebee;border:1px solid #f44336;padding:12px;margin:12px 0;border-radius:4px}
+    .warning h3{margin-top:0;color:#c62828}
   </style>
 </head>
 <body>
@@ -36,10 +38,16 @@
   <h3>📋 Homework Steps:</h3>
   <ol>
     <li><strong>Step 1:</strong> Load CSV files → Noise is automatically added to test data (50% salt-and-pepper)</li>
-    <li><strong>Step 2:</strong> Click "Train Autoencoder" → Trains CNN to remove noise (Input: noisy → Output: clean)</li>
+    <li><strong>Step 2:</strong> Click "Train Autoencoder" → Trains U-Net CNN to remove noise (20 epochs, ~2-3 minutes)</li>
     <li><strong>Step 3:</strong> Click "Test 5 Random" → Shows denoising results for 5 random test images</li>
     <li><strong>Step 4:</strong> Click "Save Model" → Download model, then reload it to verify results persist</li>
   </ol>
+</div>
+
+<div class="warning">
+  <h3>⚠️ Important Training Notes:</h3>
+  <p><strong>Training takes 20 epochs (~2-3 minutes).</strong> The model uses a deeper U-Net architecture (64→128→256→128→64 filters) which needs adequate training time to learn denoising properly. Please be patient and let training complete fully!</p>
+  <p><strong>Model architecture:</strong> Enhanced encoder-decoder with double convolutions at each level for better feature learning.</p>
 </div>
 
 <!-- csv -->
@@ -50,7 +58,7 @@
 <div class="layout">
   <div class="col">
     <h2>⚙️ Controls</h2>
-    <button id="trainBtn">🏋️ Train Autoencoder</button>
+    <button id="trainBtn">🏋️ Train Autoencoder (20 epochs)</button>
     <button id="evalBtn">📊 Evaluate</button>
     <button id="testFiveBtn">🎲 Test 5 Random</button><br>
     
