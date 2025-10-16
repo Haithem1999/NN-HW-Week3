@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>MNIST – CNN Denoiser Autoencoder (TF.js)</title>
 
-  <!-- Libraries -->
+  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
 
@@ -15,8 +15,8 @@
     .layout{display:flex;gap:24px}
     .col{flex:1 1 0}
     .status{background:#f5f5f5;padding:8px;margin:6px 0;border:1px solid #ddd}
-    .preview-row{display:flex;gap:8px;margin:6px 0}
-    canvas{border:1px solid #aaa;image-rendering:pixelated}
+    .preview-row{display:flex;gap:12px;margin:6px 0}
+    .preview-row canvas{border:1px solid #888;width:112px;height:112px} /* 28×4 */
     #preview-wrapper{border:1px solid #ddd;padding:8px}
     #preview-wrapper h3{margin:4px 0}
   </style>
@@ -24,13 +24,12 @@
 <body>
 <h1>MNIST Denoiser Autoencoder (client-side)</h1>
 
-<!-- CSV inputs -->
-<label>Train CSV <input type="file" id="trainFile" accept=".csv"></label>
-<label>Test CSV <input type="file"  id="testFile"  accept=".csv"></label>
-<button id="loadData">Load Data</button>
+<!-- csv -->
+<label>Train&nbsp;CSV <input type="file" id="trainFile" accept=".csv"></label>
+<label>Test&nbsp;CSV  <input type="file" id="testFile"  accept=".csv"></label>
+<button id="loadData">Load&nbsp;Data</button>
 
 <div class="layout">
-  <!-- LEFT: controls -->
   <div class="col">
     <h2>Controls</h2>
     <button id="trainBtn">Train Autoencoder</button>
@@ -47,7 +46,6 @@
     <div id="modelStatus" class="status"><strong>Model:</strong> none</div>
   </div>
 
-  <!-- RIGHT: logs + preview -->
   <div class="col">
     <h2>Logs</h2>
     <pre id="logs" style="min-height:120px;background:#f8f8f8;border:1px solid #ddd;padding:6px;overflow:auto"></pre>
