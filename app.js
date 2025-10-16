@@ -52,15 +52,29 @@ $('loadData').onclick = async ()=>{
 /* 2. BUILD MODEL ------------------------------------------------------- */
 function buildAE(){
   const i=tf.input({shape:[28,28,1]});
+  
+  // Encoder
   let x=tf.layers.conv2d({filters:32,kernelSize:3,padding:'same',activation:'relu'}).apply(i);
   x=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
+  
   x=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu'}).apply(x);
   x=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(x);
+  
+  // Decoder
   x=tf.layers.conv2dTranspose({filters:64,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
+  x=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu'}).apply(x);
+  
   x=tf.layers.conv2dTranspose({filters:32,kernelSize:3,strides:2,padding:'same',activation:'relu'}).apply(x);
+  x=tf.layers.conv2d({filters:32,kernelSize:3,padding:'same',activation:'relu'}).apply(x);
+  
   const o=tf.layers.conv2d({filters:1,kernelSize:3,padding:'same',activation:'sigmoid'}).apply(x);
+  
   const m=tf.model({inputs:i,outputs:o});
-  m.compile({optimizer:'adam',loss:'meanSquaredError'});
+  m.compile({
+    optimizer:tf.train.adam(0.001),
+    loss:'binaryCrossentropy',
+    metrics:['mse']
+  });
   return m;
 }
 
@@ -80,7 +94,7 @@ $('trainBtn').onclick = async ()=>{
     log('   Input: Noisy images → Output: Clean images');
     
     await model.fit(noisyTrain,trainXs,{
-      epochs:10,
+      epochs:15,
       batchSize:128,
       shuffle:true,
       validationData:[noisyVal,valXs],
@@ -109,7 +123,9 @@ $('evalBtn').onclick = async ()=>{
   }
   
   try{
-    const mse=(await model.evaluate(persistentNoisyTest,testXs).data())[0];
+    const result = await model.evaluate(persistentNoisyTest,testXs);
+    const mse = (await result[1].data())[0];
+    result.forEach(t => t.dispose());
     log(`📊 MSE on noisy test set: ${mse.toFixed(4)}`);
   }catch(e){
     log('❌ Evaluation ERROR: '+e.message);
@@ -141,7 +157,6 @@ $('testFiveBtn').onclick = async ()=>{
     const totalImages = testXs.shape[0];
     log(`   Total test images available: ${totalImages}`);
     
-    // Fix: Convert TypedArray to regular array
     const shuffled = tf.util.createShuffledIndices(totalImages);
     const selectedIndices = [];
     for(let i=0; i<5; i++){
