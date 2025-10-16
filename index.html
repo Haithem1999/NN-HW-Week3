@@ -9,49 +9,72 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@latest"></script>
 
   <style>
-    body{font-family:Arial,Helvetica,sans-serif;margin:20px}
-    h1{margin-top:0}
-    button,input[type=file]{margin:4px 0;padding:6px 10px}
+    body{font-family:Arial,Helvetica,sans-serif;margin:20px;background:#f9f9f9}
+    h1{margin-top:0;color:#333}
+    h2{color:#555;border-bottom:2px solid #ddd;padding-bottom:4px}
+    button,input[type=file]{margin:4px 0;padding:6px 10px;cursor:pointer}
+    button{background:#4CAF50;color:white;border:none;border-radius:4px}
+    button:hover{background:#45a049}
     .layout{display:flex;gap:24px}
-    .col{flex:1 1 0}
-    .status{background:#f5f5f5;padding:8px;margin:6px 0;border:1px solid #ddd}
+    .col{flex:1 1 0;background:white;padding:16px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+    .status{background:#e3f2fd;padding:8px;margin:6px 0;border:1px solid #90caf9;border-radius:4px}
     .preview-row{display:flex;gap:12px;margin:6px 0}
-    .preview-row canvas{border:1px solid #888;width:112px;height:112px} /* 28×4 */
-    #preview-wrapper{border:1px solid #ddd;padding:8px}
-    #preview-wrapper h3{margin:4px 0}
+    .preview-row canvas{border:1px solid #888;width:112px;height:112px;image-rendering:pixelated}
+    #preview-wrapper{border:1px solid #ddd;padding:8px;background:#fafafa;border-radius:4px;margin-top:12px}
+    #preview-wrapper h3{margin:4px 0 8px 0;color:#333}
+    #logs{min-height:120px;background:#263238;color:#aed581;border:1px solid #37474f;padding:8px;overflow:auto;font-family:monospace;font-size:12px;border-radius:4px}
+    .instructions{background:#fff3cd;border:1px solid #ffc107;padding:12px;margin:12px 0;border-radius:4px}
+    .instructions h3{margin-top:0;color:#856404}
+    .instructions ol{margin:8px 0;padding-left:20px}
+    .instructions li{margin:6px 0}
   </style>
 </head>
 <body>
-<h1>MNIST Denoiser Autoencoder (client-side)</h1>
+<h1>🧠 MNIST Denoiser Autoencoder (Homework Solution)</h1>
+
+<div class="instructions">
+  <h3>📋 Homework Steps:</h3>
+  <ol>
+    <li><strong>Step 1:</strong> Load CSV files → Noise is automatically added to test data (50% salt-and-pepper)</li>
+    <li><strong>Step 2:</strong> Click "Train Autoencoder" → Trains CNN to remove noise (Input: noisy → Output: clean)</li>
+    <li><strong>Step 3:</strong> Click "Test 5 Random" → Shows denoising results for 5 random test images</li>
+    <li><strong>Step 4:</strong> Click "Save Model" → Download model, then reload it to verify results persist</li>
+  </ol>
+</div>
 
 <!-- csv -->
 <label>Train&nbsp;CSV <input type="file" id="trainFile" accept=".csv"></label>
 <label>Test&nbsp;CSV  <input type="file" id="testFile"  accept=".csv"></label>
-<button id="loadData">Load&nbsp;Data</button>
+<button id="loadData">📂 Load&nbsp;Data</button>
 
 <div class="layout">
   <div class="col">
-    <h2>Controls</h2>
-    <button id="trainBtn">Train Autoencoder</button>
-    <button id="evalBtn">Evaluate</button>
-    <button id="testFiveBtn">Test 5 Random</button><br>
-    <button id="saveBtn">Save Model</button><br>
-    <input type="file" id="modelJson"    accept=".json">
-    <input type="file" id="modelWeights" accept=".bin">
-    <button id="loadBtn">Load Model</button><br>
-    <button id="resetBtn">Reset</button>
-    <button id="visorBtn">Toggle Visor</button>
+    <h2>⚙️ Controls</h2>
+    <button id="trainBtn">🏋️ Train Autoencoder</button>
+    <button id="evalBtn">📊 Evaluate</button>
+    <button id="testFiveBtn">🎲 Test 5 Random</button><br>
+    
+    <h3 style="margin-top:16px">💾 Save/Load Model</h3>
+    <button id="saveBtn">💾 Save Model</button><br>
+    <label style="font-size:12px">Model JSON: <input type="file" id="modelJson" accept=".json"></label><br>
+    <label style="font-size:12px">Model Weights: <input type="file" id="modelWeights" accept=".bin"></label><br>
+    <button id="loadBtn">📥 Load Model</button><br>
+    
+    <h3 style="margin-top:16px">🔧 Utilities</h3>
+    <button id="resetBtn" style="background:#f44336">🔄 Reset</button>
+    <button id="visorBtn" style="background:#2196F3">📈 Toggle Visor</button>
 
     <div id="dataStatus"  class="status"><strong>Data:</strong> not loaded</div>
     <div id="modelStatus" class="status"><strong>Model:</strong> none</div>
   </div>
 
   <div class="col">
-    <h2>Logs</h2>
-    <pre id="logs" style="min-height:120px;background:#f8f8f8;border:1px solid #ddd;padding:6px;overflow:auto"></pre>
+    <h2>📝 Logs</h2>
+    <pre id="logs"></pre>
 
     <div id="preview-wrapper">
-      <h3>Noisy (top) vs Denoised (bottom)</h3>
+      <h3>🔍 Denoising Results</h3>
+      <p style="margin:4px 0;font-size:14px;color:#666">Top row: Noisy input images | Bottom row: Denoised output</p>
       <div id="previewNoisy"    class="preview-row"></div>
       <div id="previewDenoised" class="preview-row"></div>
     </div>
