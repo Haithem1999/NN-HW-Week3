@@ -49,41 +49,102 @@ $('loadData').onclick = async ()=>{
   }
 };
 
-/* 2. BUILD MODEL - U-Net inspired architecture ----------------------- */
+/* 2. BUILD MODEL - Stable sequential architecture -------------------- */
 function buildAE(){
-  const i=tf.input({shape:[28,28,1]});
+  const model = tf.sequential();
   
-  // Encoder path
-  const conv1=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(i);
-  const conv1b=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(conv1);
-  const pool1=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(conv1b);
+  // Encoder
+  model.add(tf.layers.conv2d({
+    inputShape: [28, 28, 1],
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.maxPooling2d({
+    poolSize: 2,
+    padding: 'same'
+  }));
   
-  const conv2=tf.layers.conv2d({filters:128,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(pool1);
-  const conv2b=tf.layers.conv2d({filters:128,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(conv2);
-  const pool2=tf.layers.maxPooling2d({poolSize:2,padding:'same'}).apply(conv2b);
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.maxPooling2d({
+    poolSize: 2,
+    padding: 'same'
+  }));
   
   // Bottleneck
-  const conv3=tf.layers.conv2d({filters:256,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(pool2);
-  const conv3b=tf.layers.conv2d({filters:256,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(conv3);
+  model.add(tf.layers.conv2d({
+    filters: 128,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
   
-  // Decoder path
-  const up1=tf.layers.upSampling2d({size:[2,2]}).apply(conv3b);
-  const conv4=tf.layers.conv2d({filters:128,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(up1);
-  const conv4b=tf.layers.conv2d({filters:128,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(conv4);
+  // Decoder
+  model.add(tf.layers.upSampling2d({
+    size: [2, 2]
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 64,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
   
-  const up2=tf.layers.upSampling2d({size:[2,2]}).apply(conv4b);
-  const conv5=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(up2);
-  const conv5b=tf.layers.conv2d({filters:64,kernelSize:3,padding:'same',activation:'relu',kernelInitializer:'heNormal'}).apply(conv5);
+  model.add(tf.layers.upSampling2d({
+    size: [2, 2]
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
+  model.add(tf.layers.conv2d({
+    filters: 32,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'relu'
+  }));
   
-  // Output layer
-  const output=tf.layers.conv2d({filters:1,kernelSize:1,padding:'same',activation:'sigmoid'}).apply(conv5b);
+  // Output
+  model.add(tf.layers.conv2d({
+    filters: 1,
+    kernelSize: 3,
+    padding: 'same',
+    activation: 'sigmoid'
+  }));
   
-  const m=tf.model({inputs:i,outputs:output});
-  m.compile({
-    optimizer:tf.train.adam(0.001),
-    loss:'meanSquaredError'
+  model.compile({
+    optimizer: tf.train.adam(0.001),
+    loss: 'meanSquaredError',
+    metrics: ['mse']
   });
-  return m;
+  
+  return model;
 }
 
 /* 3. TRAIN ------------------------------------------------------------- */
@@ -98,19 +159,19 @@ $('trainBtn').onclick = async ()=>{
     if(model) model.dispose();
     model=buildAE(); 
     status();
-    log('🏋️ Training U-Net style CNN Autoencoder for denoising…');
-    log('   Architecture: 64→128→256→128→64 filters with skip connections');
+    log('🏋️ Training CNN Autoencoder for denoising…');
+    log('   Architecture: Sequential model with stable layers');
     log('   Input: Noisy images → Output: Clean images');
     
     await model.fit(noisyTrain,trainXs,{
-      epochs:20,
-      batchSize:64,
+      epochs:25,
+      batchSize:128,
       shuffle:true,
       validationData:[noisyVal,valXs],
       callbacks:{
         onEpochEnd: (epoch, logs) => {
           if((epoch+1)%5===0){
-            log(`   Epoch ${epoch+1}/20 - loss: ${logs.loss.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}`);
+            log(`   Epoch ${epoch+1}/25 - loss: ${logs.loss.toFixed(4)}, val_loss: ${logs.val_loss.toFixed(4)}`);
           }
         }
       }
@@ -190,7 +251,8 @@ $('testFiveBtn').onclick = async ()=>{
     // Debug: Check output values
     const denoisedMin = denoised.min().dataSync()[0];
     const denoisedMax = denoised.max().dataSync()[0];
-    log(`   📊 Denoised output range: [${denoisedMin.toFixed(4)}, ${denoisedMax.toFixed(4)}]`);
+    const denoisedMean = denoised.mean().dataSync()[0];
+    log(`   📊 Denoised stats - min: ${denoisedMin.toFixed(4)}, max: ${denoisedMax.toFixed(4)}, mean: ${denoisedMean.toFixed(4)}`);
 
     const noisyArr = noisyBatch.unstack();
     const denArr = denoised.unstack();
