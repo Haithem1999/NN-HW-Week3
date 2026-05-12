@@ -1,0 +1,2829 @@
+{
+    "name": "[Auto Repair Template] - AI Functions",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 1112468,
+                "maxResults": 1
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 1050
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "data": {
+                                "editable": "true"
+                            },
+                            "label": "convoy-auto-repair-ai-functions"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "type": "hook:gateway-webhook",
+                        "label": "Webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "type": "number",
+                        "label": "Maximum number of results"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "builtin:BasicRouter",
+            "version": 1,
+            "mapper": null,
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 1050
+                }
+            },
+            "routes": [
+                {
+                    "flow": [
+                        {
+                            "id": 17,
+                            "module": "sendgrid:sendMail",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 4209468
+                            },
+                            "filter": {
+                                "name": "Leave Messages",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.name}}",
+                                            "b": "message",
+                                            "o": "text:equal:ci"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "asm": {},
+                                "from": {
+                                    "name": "PrimeSync AI",
+                                    "email": "ai@mail.primesync.co"
+                                },
+                                "send_to": [
+                                    {
+                                        "email": "example@mail.com"
+                                    }
+                                ],
+                                "reply_to": {},
+                                "template_id": "d-eb7f187d342c4f9eb5ace8836059e774",
+                                "templateOrNot": "template",
+                                "json_or_values": "values",
+                                "dynamic_template_data": [
+                                    {
+                                        "key": "name",
+                                        "value": "{{1.args.name}}"
+                                    },
+                                    {
+                                        "key": "phone",
+                                        "value": "{{1.args.phone}}"
+                                    },
+                                    {
+                                        "key": "message",
+                                        "value": "{{1.args.message}}"
+                                    }
+                                ]
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 600,
+                                    "y": 0,
+                                    "name": "Leave a Message"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "asm": {
+                                            "nested": {
+                                                "group_id": {
+                                                    "mode": "chose"
+                                                },
+                                                "groups_to_display": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        },
+                                        "from": {
+                                            "nested": {
+                                                "email": {
+                                                    "mode": "chose",
+                                                    "label": "ai@mail.primesync.co"
+                                                }
+                                            }
+                                        },
+                                        "headers": {
+                                            "mode": "chose"
+                                        },
+                                        "send_to": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null
+                                            ]
+                                        },
+                                        "categories": {
+                                            "mode": "chose"
+                                        },
+                                        "attachments": {
+                                            "mode": "chose"
+                                        },
+                                        "custom_args": {
+                                            "mode": "chose"
+                                        },
+                                        "template_id": {
+                                            "mode": "chose",
+                                            "label": "Auto Repair Shop (Leave Message)"
+                                        },
+                                        "content_type": {
+                                            "mode": "chose",
+                                            "label": "Empty"
+                                        },
+                                        "templateOrNot": {
+                                            "mode": "chose",
+                                            "label": "Yes"
+                                        },
+                                        "copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "json_or_values": {
+                                            "label": "Keys & Values"
+                                        },
+                                        "blind_copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "dynamic_template_data": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null,
+                                                null,
+                                                null
+                                            ]
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "sendgrid"
+                                            },
+                                            "label": "My SendGrid connection (make-api)"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:sendgrid",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "from",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "select",
+                                                "label": "Email address",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "From"
+                                    },
+                                    {
+                                        "name": "send_to",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email address",
+                                                    "required": true
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Send to",
+                                        "required": true,
+                                        "validate": {
+                                            "maxItems": 1000
+                                        }
+                                    },
+                                    {
+                                        "name": "templateOrNot",
+                                        "type": "select",
+                                        "label": "Use SendGrid Transactional template?",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "template",
+                                                "no_template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "attachments",
+                                        "spec": [
+                                            {
+                                                "name": "filename",
+                                                "type": "text",
+                                                "label": "File name",
+                                                "required": true,
+                                                "semantic": "file:name"
+                                            },
+                                            {
+                                                "name": "content",
+                                                "type": "buffer",
+                                                "label": "Data",
+                                                "required": true,
+                                                "semantic": "file:data"
+                                            },
+                                            {
+                                                "name": "content_id",
+                                                "type": "text",
+                                                "label": "Content ID"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Attachments"
+                                    },
+                                    {
+                                        "name": "categories",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "text",
+                                            "label": "Category",
+                                            "validate": {
+                                                "max": 255
+                                            }
+                                        },
+                                        "type": "array",
+                                        "label": "Categories",
+                                        "validate": {
+                                            "maxItems": 10
+                                        }
+                                    },
+                                    {
+                                        "name": "send_at",
+                                        "type": "date",
+                                        "label": "Send at"
+                                    },
+                                    {
+                                        "name": "copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "blind_copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Blind copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "reply_to",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "email",
+                                                "label": "Email address"
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Reply to"
+                                    },
+                                    {
+                                        "name": "asm",
+                                        "spec": [
+                                            {
+                                                "name": "group_id",
+                                                "type": "select",
+                                                "label": "Group ID"
+                                            },
+                                            {
+                                                "name": "groups_to_display",
+                                                "type": "select",
+                                                "label": "Groups to Display",
+                                                "multiple": true
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "ASM"
+                                    },
+                                    {
+                                        "name": "custom_args",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key"
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Custom Args"
+                                    },
+                                    {
+                                        "name": "headers",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Headers"
+                                    },
+                                    {
+                                        "name": "template_id",
+                                        "type": "select",
+                                        "label": "Template ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "json_or_values",
+                                        "type": "select",
+                                        "label": "Map JSON or fill Keys and Values",
+                                        "validate": {
+                                            "enum": [
+                                                "json",
+                                                "values"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "subject",
+                                        "type": "text",
+                                        "label": "Subject"
+                                    },
+                                    {
+                                        "name": "content_type",
+                                        "type": "select",
+                                        "label": "Content Type",
+                                        "validate": {
+                                            "enum": [
+                                                "text/plain",
+                                                "text/html"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "content_value",
+                                        "type": "text",
+                                        "label": "Content"
+                                    },
+                                    {
+                                        "name": "dynamic_template_data",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "any",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Dynamic Template Data"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 22,
+                            "module": "util:SetVariable2",
+                            "version": 1,
+                            "parameters": {},
+                            "filter": {
+                                "name": "Tow",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.name}}",
+                                            "b": "contactTow",
+                                            "o": "text:equal:ci"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "name": "phone",
+                                "scope": "roundtrip",
+                                "value": "{{if(length(toString(1.args.phone)) = 11 & substring(toString(1.args.phone); 0; 1) = 1; substring(toString(1.args.phone); 1); toString(1.args.phone))}}"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 600,
+                                    "y": 450
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "scope": {
+                                            "label": "One cycle"
+                                        }
+                                    }
+                                },
+                                "expect": [
+                                    {
+                                        "name": "name",
+                                        "type": "text",
+                                        "label": "Variable name",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "scope",
+                                        "type": "select",
+                                        "label": "Variable lifetime",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "roundtrip",
+                                                "execution"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": "any",
+                                        "label": "Variable value"
+                                    }
+                                ],
+                                "interface": [
+                                    {
+                                        "name": "phone",
+                                        "type": "any",
+                                        "label": "phone"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 4,
+                            "module": "twilio:SendSMS",
+                            "version": 2,
+                            "parameters": {
+                                "__IMTCONN__": 2837893
+                            },
+                            "mapper": {
+                                "to": "+1{{22.phone}}",
+                                "body": "Hi {{1.args.name}}, just confirming that [TOW TRUCK COMPANY] has been notified and will be contacting you shortly. If you’d prefer, you can also give them a call directly at [TOW TRUCK PHONE NUMBER]\n\nSchedule your appointment with [AUTO REPAIR SHOP]! Follow this link to book your service: [SCHEDULING LINK]",
+                                "from": "+18777130763",
+                                "fromType": "phone",
+                                "messageBody": "body"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 900,
+                                    "y": 450,
+                                    "name": "Tow to User"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "(877) 713-0763"
+                                        },
+                                        "fromType": {
+                                            "mode": "chose",
+                                            "label": "phone number"
+                                        },
+                                        "mediaUrl": {
+                                            "mode": "chose"
+                                        },
+                                        "messageBody": {
+                                            "mode": "chose",
+                                            "label": "Create a Body"
+                                        },
+                                        "smartEncoded": {
+                                            "mode": "chose"
+                                        },
+                                        "applicationSid": {
+                                            "mode": "chose"
+                                        },
+                                        "provideFeedback": {
+                                            "mode": "chose"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "twilio"
+                                            },
+                                            "label": "PrimeSync Twilio Connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:twilio",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "fromType",
+                                        "type": "select",
+                                        "label": "Send a message from",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "phone",
+                                                "service",
+                                                "channel"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "to",
+                                        "type": "text",
+                                        "label": "To",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageBody",
+                                        "type": "select",
+                                        "label": "Message Body",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "body",
+                                                "template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "mediaUrl",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "url"
+                                        },
+                                        "type": "array",
+                                        "label": "Media URL"
+                                    },
+                                    {
+                                        "name": "smartEncoded",
+                                        "type": "boolean",
+                                        "label": "Smart encoded"
+                                    },
+                                    {
+                                        "name": "validityPeriod",
+                                        "type": "uinteger",
+                                        "label": "Validity period"
+                                    },
+                                    {
+                                        "name": "statusCallback",
+                                        "type": "url",
+                                        "label": "Status callback"
+                                    },
+                                    {
+                                        "name": "applicationSid",
+                                        "type": "select",
+                                        "label": "Application"
+                                    },
+                                    {
+                                        "name": "maxPrice",
+                                        "type": "number",
+                                        "label": "Max price"
+                                    },
+                                    {
+                                        "name": "provideFeedback",
+                                        "type": "boolean",
+                                        "label": "Provide feedback"
+                                    },
+                                    {
+                                        "name": "from",
+                                        "type": "select",
+                                        "label": "Phone number",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "body",
+                                        "type": "text",
+                                        "label": "Body",
+                                        "required": true,
+                                        "validate": {
+                                            "max": 1600
+                                        }
+                                    }
+                                ]
+                            },
+                            "onerror": [
+                                {
+                                    "id": 16,
+                                    "module": "gateway:WebhookRespond",
+                                    "version": 1,
+                                    "parameters": {},
+                                    "mapper": {
+                                        "body": "{\n  \"result\": \"Error\"\n}",
+                                        "status": "200",
+                                        "headers": []
+                                    },
+                                    "metadata": {
+                                        "designer": {
+                                            "x": 1200,
+                                            "y": 600
+                                        },
+                                        "restore": {
+                                            "expect": {
+                                                "headers": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        },
+                                        "expect": [
+                                            {
+                                                "name": "status",
+                                                "type": "uinteger",
+                                                "label": "Status",
+                                                "required": true,
+                                                "validate": {
+                                                    "min": 100
+                                                }
+                                            },
+                                            {
+                                                "name": "body",
+                                                "type": "any",
+                                                "label": "Body"
+                                            },
+                                            {
+                                                "name": "headers",
+                                                "spec": [
+                                                    {
+                                                        "name": "key",
+                                                        "type": "text",
+                                                        "label": "Key",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "max": 256
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Value",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "max": 4096
+                                                        }
+                                                    }
+                                                ],
+                                                "type": "array",
+                                                "label": "Custom headers",
+                                                "validate": {
+                                                    "maxItems": 16
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 15,
+                            "module": "gateway:WebhookRespond",
+                            "version": 1,
+                            "parameters": {},
+                            "mapper": {
+                                "body": "{\n  \"result\": \"success\"\n}",
+                                "status": "200",
+                                "headers": []
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1200,
+                                    "y": 300
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "headers": {
+                                            "mode": "chose"
+                                        }
+                                    }
+                                },
+                                "expect": [
+                                    {
+                                        "name": "status",
+                                        "type": "uinteger",
+                                        "label": "Status",
+                                        "required": true,
+                                        "validate": {
+                                            "min": 100
+                                        }
+                                    },
+                                    {
+                                        "name": "body",
+                                        "type": "any",
+                                        "label": "Body"
+                                    },
+                                    {
+                                        "name": "headers",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true,
+                                                "validate": {
+                                                    "max": 256
+                                                }
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value",
+                                                "required": true,
+                                                "validate": {
+                                                    "max": 4096
+                                                }
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Custom headers",
+                                        "validate": {
+                                            "maxItems": 16
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 10,
+                            "module": "twilio:SendSMS",
+                            "version": 2,
+                            "parameters": {
+                                "__IMTCONN__": 2837893
+                            },
+                            "mapper": {
+                                "to": "+1[TOW TRUCK PHONE NUMBER]",
+                                "body": "Tow Request – New Pickup\nClient Name: {{1.args.name}}\nClient Phone: {{1.args.phone}}\nPick-Up Location: Please contact the client directly to confirm.\nDrop-Off Location: [AUTO REPAIR SHOP]\n\nPlease reach out to the client as soon as possible to arrange the pickup.",
+                                "from": "+13802255538",
+                                "fromType": "phone",
+                                "messageBody": "body"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1500,
+                                    "y": 300,
+                                    "name": "Notify Tow Company"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "(380) 225-5538"
+                                        },
+                                        "fromType": {
+                                            "mode": "chose",
+                                            "label": "phone number"
+                                        },
+                                        "mediaUrl": {
+                                            "mode": "chose"
+                                        },
+                                        "messageBody": {
+                                            "mode": "chose",
+                                            "label": "Create a Body"
+                                        },
+                                        "smartEncoded": {
+                                            "mode": "chose"
+                                        },
+                                        "applicationSid": {
+                                            "mode": "chose"
+                                        },
+                                        "provideFeedback": {
+                                            "mode": "chose"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "twilio"
+                                            },
+                                            "label": "PrimeSync Twilio Connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:twilio",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "fromType",
+                                        "type": "select",
+                                        "label": "Send a message from",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "phone",
+                                                "service",
+                                                "channel"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "to",
+                                        "type": "text",
+                                        "label": "To",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageBody",
+                                        "type": "select",
+                                        "label": "Message Body",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "body",
+                                                "template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "mediaUrl",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "url"
+                                        },
+                                        "type": "array",
+                                        "label": "Media URL"
+                                    },
+                                    {
+                                        "name": "smartEncoded",
+                                        "type": "boolean",
+                                        "label": "Smart encoded"
+                                    },
+                                    {
+                                        "name": "validityPeriod",
+                                        "type": "uinteger",
+                                        "label": "Validity period"
+                                    },
+                                    {
+                                        "name": "statusCallback",
+                                        "type": "url",
+                                        "label": "Status callback"
+                                    },
+                                    {
+                                        "name": "applicationSid",
+                                        "type": "select",
+                                        "label": "Application"
+                                    },
+                                    {
+                                        "name": "maxPrice",
+                                        "type": "number",
+                                        "label": "Max price"
+                                    },
+                                    {
+                                        "name": "provideFeedback",
+                                        "type": "boolean",
+                                        "label": "Provide feedback"
+                                    },
+                                    {
+                                        "name": "from",
+                                        "type": "select",
+                                        "label": "Phone number",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "body",
+                                        "type": "text",
+                                        "label": "Body",
+                                        "required": true,
+                                        "validate": {
+                                            "max": 1600
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 18,
+                            "module": "sendgrid:sendMail",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 4209468
+                            },
+                            "filter": {
+                                "name": "Quote Request",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.name}}",
+                                            "b": "quote",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "asm": {},
+                                "from": {
+                                    "name": "PrimeSync AI",
+                                    "email": "ai@mail.primesync.co"
+                                },
+                                "send_to": [
+                                    {
+                                        "email": "example@mail.com"
+                                    }
+                                ],
+                                "reply_to": {},
+                                "template_id": "d-2edf6e06fb624bd0a71d0bac988038c8",
+                                "templateOrNot": "template",
+                                "json_or_values": "values",
+                                "dynamic_template_data": [
+                                    {
+                                        "key": "name",
+                                        "value": "{{1.args.name}}"
+                                    },
+                                    {
+                                        "key": "phone",
+                                        "value": "{{1.args.phone}}"
+                                    },
+                                    {
+                                        "key": "vehicleDetails",
+                                        "value": "{{1.args.vehicleDetails}}"
+                                    },
+                                    {
+                                        "key": "quoteRequest",
+                                        "value": "{{1.args.quoteRequest}}"
+                                    }
+                                ]
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 600,
+                                    "y": 900,
+                                    "name": "Quote Request"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "asm": {
+                                            "nested": {
+                                                "group_id": {
+                                                    "mode": "chose"
+                                                },
+                                                "groups_to_display": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        },
+                                        "from": {
+                                            "nested": {
+                                                "email": {
+                                                    "mode": "chose",
+                                                    "label": "ai@mail.primesync.co"
+                                                }
+                                            }
+                                        },
+                                        "headers": {
+                                            "mode": "chose"
+                                        },
+                                        "send_to": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null
+                                            ]
+                                        },
+                                        "categories": {
+                                            "mode": "chose"
+                                        },
+                                        "attachments": {
+                                            "mode": "chose"
+                                        },
+                                        "custom_args": {
+                                            "mode": "chose"
+                                        },
+                                        "template_id": {
+                                            "mode": "chose",
+                                            "label": "Auto Repair Shop (Quote Request)"
+                                        },
+                                        "content_type": {
+                                            "mode": "chose",
+                                            "label": "Empty"
+                                        },
+                                        "templateOrNot": {
+                                            "mode": "chose",
+                                            "label": "Yes"
+                                        },
+                                        "copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "json_or_values": {
+                                            "label": "Keys & Values"
+                                        },
+                                        "blind_copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "dynamic_template_data": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null,
+                                                null,
+                                                null,
+                                                null
+                                            ]
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "sendgrid"
+                                            },
+                                            "label": "My SendGrid connection (make-api)"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:sendgrid",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "from",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "select",
+                                                "label": "Email address",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "From"
+                                    },
+                                    {
+                                        "name": "send_to",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email address",
+                                                    "required": true
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Send to",
+                                        "required": true,
+                                        "validate": {
+                                            "maxItems": 1000
+                                        }
+                                    },
+                                    {
+                                        "name": "templateOrNot",
+                                        "type": "select",
+                                        "label": "Use SendGrid Transactional template?",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "template",
+                                                "no_template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "attachments",
+                                        "spec": [
+                                            {
+                                                "name": "filename",
+                                                "type": "text",
+                                                "label": "File name",
+                                                "required": true,
+                                                "semantic": "file:name"
+                                            },
+                                            {
+                                                "name": "content",
+                                                "type": "buffer",
+                                                "label": "Data",
+                                                "required": true,
+                                                "semantic": "file:data"
+                                            },
+                                            {
+                                                "name": "content_id",
+                                                "type": "text",
+                                                "label": "Content ID"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Attachments"
+                                    },
+                                    {
+                                        "name": "categories",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "text",
+                                            "label": "Category",
+                                            "validate": {
+                                                "max": 255
+                                            }
+                                        },
+                                        "type": "array",
+                                        "label": "Categories",
+                                        "validate": {
+                                            "maxItems": 10
+                                        }
+                                    },
+                                    {
+                                        "name": "send_at",
+                                        "type": "date",
+                                        "label": "Send at"
+                                    },
+                                    {
+                                        "name": "copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "blind_copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Blind copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "reply_to",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "email",
+                                                "label": "Email address"
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Reply to"
+                                    },
+                                    {
+                                        "name": "asm",
+                                        "spec": [
+                                            {
+                                                "name": "group_id",
+                                                "type": "select",
+                                                "label": "Group ID"
+                                            },
+                                            {
+                                                "name": "groups_to_display",
+                                                "type": "select",
+                                                "label": "Groups to Display",
+                                                "multiple": true
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "ASM"
+                                    },
+                                    {
+                                        "name": "custom_args",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key"
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Custom Args"
+                                    },
+                                    {
+                                        "name": "headers",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Headers"
+                                    },
+                                    {
+                                        "name": "template_id",
+                                        "type": "select",
+                                        "label": "Template ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "json_or_values",
+                                        "type": "select",
+                                        "label": "Map JSON or fill Keys and Values",
+                                        "validate": {
+                                            "enum": [
+                                                "json",
+                                                "values"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "subject",
+                                        "type": "text",
+                                        "label": "Subject"
+                                    },
+                                    {
+                                        "name": "content_type",
+                                        "type": "select",
+                                        "label": "Content Type",
+                                        "validate": {
+                                            "enum": [
+                                                "text/plain",
+                                                "text/html"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "content_value",
+                                        "type": "text",
+                                        "label": "Content"
+                                    },
+                                    {
+                                        "name": "dynamic_template_data",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "any",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Dynamic Template Data"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 21,
+                            "module": "util:SetVariable2",
+                            "version": 1,
+                            "parameters": {},
+                            "filter": {
+                                "name": "appointment_link",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.name}}",
+                                            "b": "appointment_link",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "name": "phone",
+                                "scope": "roundtrip",
+                                "value": "{{if(length(toString(1.args.phone)) = 11 & substring(toString(1.args.phone); 0; 1) = 1; substring(toString(1.args.phone); 1); toString(1.args.phone))}}"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 600,
+                                    "y": 1350
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "scope": {
+                                            "label": "One cycle"
+                                        }
+                                    }
+                                },
+                                "expect": [
+                                    {
+                                        "name": "name",
+                                        "type": "text",
+                                        "label": "Variable name",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "scope",
+                                        "type": "select",
+                                        "label": "Variable lifetime",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "roundtrip",
+                                                "execution"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "value",
+                                        "type": "any",
+                                        "label": "Variable value"
+                                    }
+                                ],
+                                "interface": [
+                                    {
+                                        "name": "phone",
+                                        "type": "any",
+                                        "label": "phone"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 9,
+                            "module": "twilio:SendSMS",
+                            "version": 2,
+                            "parameters": {
+                                "__IMTCONN__": 1738925
+                            },
+                            "mapper": {
+                                "to": "+1{{21.phone}}",
+                                "body": "Schedule your appointment with [AUTO REPAIR SHOP]! Follow this link to book your service: [SCHEDULING LINK]",
+                                "from": "+13802255538",
+                                "fromType": "phone",
+                                "messageBody": "body"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 900,
+                                    "y": 1350,
+                                    "name": "Send Scheduling Link"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "(380) 225-5538"
+                                        },
+                                        "fromType": {
+                                            "mode": "chose",
+                                            "label": "phone number"
+                                        },
+                                        "mediaUrl": {
+                                            "mode": "chose"
+                                        },
+                                        "messageBody": {
+                                            "mode": "chose",
+                                            "label": "Create a Body"
+                                        },
+                                        "smartEncoded": {
+                                            "mode": "chose"
+                                        },
+                                        "applicationSid": {
+                                            "mode": "chose"
+                                        },
+                                        "provideFeedback": {
+                                            "mode": "chose"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "twilio"
+                                            },
+                                            "label": "My Twilio connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:twilio",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "fromType",
+                                        "type": "select",
+                                        "label": "Send a message from",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "phone",
+                                                "service",
+                                                "channel"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "to",
+                                        "type": "text",
+                                        "label": "To",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageBody",
+                                        "type": "select",
+                                        "label": "Message Body",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "body",
+                                                "template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "mediaUrl",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "url"
+                                        },
+                                        "type": "array",
+                                        "label": "Media URL"
+                                    },
+                                    {
+                                        "name": "smartEncoded",
+                                        "type": "boolean",
+                                        "label": "Smart encoded"
+                                    },
+                                    {
+                                        "name": "validityPeriod",
+                                        "type": "uinteger",
+                                        "label": "Validity period"
+                                    },
+                                    {
+                                        "name": "statusCallback",
+                                        "type": "url",
+                                        "label": "Status callback"
+                                    },
+                                    {
+                                        "name": "applicationSid",
+                                        "type": "select",
+                                        "label": "Application"
+                                    },
+                                    {
+                                        "name": "maxPrice",
+                                        "type": "number",
+                                        "label": "Max price"
+                                    },
+                                    {
+                                        "name": "provideFeedback",
+                                        "type": "boolean",
+                                        "label": "Provide feedback"
+                                    },
+                                    {
+                                        "name": "from",
+                                        "type": "select",
+                                        "label": "Phone number",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "body",
+                                        "type": "text",
+                                        "label": "Body",
+                                        "required": true,
+                                        "validate": {
+                                            "max": 1600
+                                        }
+                                    }
+                                ]
+                            },
+                            "onerror": [
+                                {
+                                    "id": 13,
+                                    "module": "gateway:WebhookRespond",
+                                    "version": 1,
+                                    "parameters": {},
+                                    "mapper": {
+                                        "body": "{\n  \"result\": \"Error\"\n}",
+                                        "status": "200",
+                                        "headers": []
+                                    },
+                                    "metadata": {
+                                        "designer": {
+                                            "x": 1200,
+                                            "y": 1500
+                                        },
+                                        "restore": {
+                                            "expect": {
+                                                "headers": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        },
+                                        "expect": [
+                                            {
+                                                "name": "status",
+                                                "type": "uinteger",
+                                                "label": "Status",
+                                                "required": true,
+                                                "validate": {
+                                                    "min": 100
+                                                }
+                                            },
+                                            {
+                                                "name": "body",
+                                                "type": "any",
+                                                "label": "Body"
+                                            },
+                                            {
+                                                "name": "headers",
+                                                "spec": [
+                                                    {
+                                                        "name": "key",
+                                                        "type": "text",
+                                                        "label": "Key",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "max": 256
+                                                        }
+                                                    },
+                                                    {
+                                                        "name": "value",
+                                                        "type": "text",
+                                                        "label": "Value",
+                                                        "required": true,
+                                                        "validate": {
+                                                            "max": 4096
+                                                        }
+                                                    }
+                                                ],
+                                                "type": "array",
+                                                "label": "Custom headers",
+                                                "validate": {
+                                                    "maxItems": 16
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "id": 14,
+                            "module": "gateway:WebhookRespond",
+                            "version": 1,
+                            "parameters": {},
+                            "mapper": {
+                                "body": "{\n  \"result\": \"success\"\n}",
+                                "status": "200",
+                                "headers": []
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1200,
+                                    "y": 1200
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "headers": {
+                                            "mode": "chose"
+                                        }
+                                    }
+                                },
+                                "expect": [
+                                    {
+                                        "name": "status",
+                                        "type": "uinteger",
+                                        "label": "Status",
+                                        "required": true,
+                                        "validate": {
+                                            "min": 100
+                                        }
+                                    },
+                                    {
+                                        "name": "body",
+                                        "type": "any",
+                                        "label": "Body"
+                                    },
+                                    {
+                                        "name": "headers",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true,
+                                                "validate": {
+                                                    "max": 256
+                                                }
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value",
+                                                "required": true,
+                                                "validate": {
+                                                    "max": 4096
+                                                }
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Custom headers",
+                                        "validate": {
+                                            "maxItems": 16
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "id": 23,
+                            "module": "sendgrid:sendMail",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 4209468
+                            },
+                            "mapper": {
+                                "asm": {},
+                                "from": {
+                                    "name": "PrimeSync AI",
+                                    "email": "ai@mail.primesync.co"
+                                },
+                                "send_to": [
+                                    {
+                                        "email": "example@mail.com"
+                                    }
+                                ],
+                                "reply_to": {},
+                                "template_id": "d-499073a84a694d3d8d3e5882437c4324",
+                                "templateOrNot": "template",
+                                "json_or_values": "values",
+                                "dynamic_template_data": [
+                                    {
+                                        "key": "name",
+                                        "value": "{{1.args.name}}"
+                                    },
+                                    {
+                                        "key": "phone",
+                                        "value": "{{1.args.phone}}"
+                                    },
+                                    {
+                                        "key": "reason",
+                                        "value": "{{1.args.reason}}"
+                                    }
+                                ]
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 1500,
+                                    "y": 1200,
+                                    "name": "Link Confirmation"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "asm": {
+                                            "nested": {
+                                                "group_id": {
+                                                    "mode": "chose"
+                                                },
+                                                "groups_to_display": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        },
+                                        "from": {
+                                            "nested": {
+                                                "email": {
+                                                    "mode": "chose",
+                                                    "label": "ai@mail.primesync.co"
+                                                }
+                                            }
+                                        },
+                                        "headers": {
+                                            "mode": "chose"
+                                        },
+                                        "send_to": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null
+                                            ]
+                                        },
+                                        "categories": {
+                                            "mode": "chose"
+                                        },
+                                        "attachments": {
+                                            "mode": "chose"
+                                        },
+                                        "custom_args": {
+                                            "mode": "chose"
+                                        },
+                                        "template_id": {
+                                            "mode": "chose",
+                                            "label": "Auto Repair Shop (Link Notification)"
+                                        },
+                                        "content_type": {
+                                            "mode": "chose",
+                                            "label": "Empty"
+                                        },
+                                        "templateOrNot": {
+                                            "mode": "chose",
+                                            "label": "Yes"
+                                        },
+                                        "copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "json_or_values": {
+                                            "label": "Keys & Values"
+                                        },
+                                        "blind_copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "dynamic_template_data": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null,
+                                                null,
+                                                null
+                                            ]
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "sendgrid"
+                                            },
+                                            "label": "My SendGrid connection (make-api)"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:sendgrid",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "from",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "select",
+                                                "label": "Email address",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "From"
+                                    },
+                                    {
+                                        "name": "send_to",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email address",
+                                                    "required": true
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Send to",
+                                        "required": true,
+                                        "validate": {
+                                            "maxItems": 1000
+                                        }
+                                    },
+                                    {
+                                        "name": "templateOrNot",
+                                        "type": "select",
+                                        "label": "Use SendGrid Transactional template?",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "template",
+                                                "no_template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "attachments",
+                                        "spec": [
+                                            {
+                                                "name": "filename",
+                                                "type": "text",
+                                                "label": "File name",
+                                                "required": true,
+                                                "semantic": "file:name"
+                                            },
+                                            {
+                                                "name": "content",
+                                                "type": "buffer",
+                                                "label": "Data",
+                                                "required": true,
+                                                "semantic": "file:data"
+                                            },
+                                            {
+                                                "name": "content_id",
+                                                "type": "text",
+                                                "label": "Content ID"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Attachments"
+                                    },
+                                    {
+                                        "name": "categories",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "text",
+                                            "label": "Category",
+                                            "validate": {
+                                                "max": 255
+                                            }
+                                        },
+                                        "type": "array",
+                                        "label": "Categories",
+                                        "validate": {
+                                            "maxItems": 10
+                                        }
+                                    },
+                                    {
+                                        "name": "send_at",
+                                        "type": "date",
+                                        "label": "Send at"
+                                    },
+                                    {
+                                        "name": "copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "blind_copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Blind copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "reply_to",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "email",
+                                                "label": "Email address"
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Reply to"
+                                    },
+                                    {
+                                        "name": "asm",
+                                        "spec": [
+                                            {
+                                                "name": "group_id",
+                                                "type": "select",
+                                                "label": "Group ID"
+                                            },
+                                            {
+                                                "name": "groups_to_display",
+                                                "type": "select",
+                                                "label": "Groups to Display",
+                                                "multiple": true
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "ASM"
+                                    },
+                                    {
+                                        "name": "custom_args",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key"
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Custom Args"
+                                    },
+                                    {
+                                        "name": "headers",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Headers"
+                                    },
+                                    {
+                                        "name": "template_id",
+                                        "type": "select",
+                                        "label": "Template ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "json_or_values",
+                                        "type": "select",
+                                        "label": "Map JSON or fill Keys and Values",
+                                        "validate": {
+                                            "enum": [
+                                                "json",
+                                                "values"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "subject",
+                                        "type": "text",
+                                        "label": "Subject"
+                                    },
+                                    {
+                                        "name": "content_type",
+                                        "type": "select",
+                                        "label": "Content Type",
+                                        "validate": {
+                                            "enum": [
+                                                "text/plain",
+                                                "text/html"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "content_value",
+                                        "type": "text",
+                                        "label": "Content"
+                                    },
+                                    {
+                                        "name": "dynamic_template_data",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "any",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Dynamic Template Data"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 24,
+                            "module": "sendgrid:sendMail",
+                            "version": 1,
+                            "parameters": {
+                                "__IMTCONN__": 4209468
+                            },
+                            "filter": {
+                                "name": "appointment_request",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.name}}",
+                                            "b": "appointment_request",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "asm": {},
+                                "from": {
+                                    "name": "PrimeSync AI",
+                                    "email": "ai@mail.primesync.co"
+                                },
+                                "send_to": [
+                                    {
+                                        "email": "example@mail.com"
+                                    }
+                                ],
+                                "reply_to": {},
+                                "template_id": "d-9d09c35bf87449dfb2971f6452c7af92",
+                                "templateOrNot": "template",
+                                "json_or_values": "values",
+                                "dynamic_template_data": [
+                                    {
+                                        "key": "name",
+                                        "value": "{{1.args.name}}"
+                                    },
+                                    {
+                                        "key": "phone",
+                                        "value": "{{1.args.phone}}"
+                                    },
+                                    {
+                                        "key": "reason",
+                                        "value": "{{1.args.reason}}"
+                                    },
+                                    {
+                                        "key": "time",
+                                        "value": "{{1.args.time}}"
+                                    }
+                                ]
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 600,
+                                    "y": 1800,
+                                    "name": "Appointment Request"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "asm": {
+                                            "nested": {
+                                                "group_id": {
+                                                    "mode": "chose"
+                                                },
+                                                "groups_to_display": {
+                                                    "mode": "chose"
+                                                }
+                                            }
+                                        },
+                                        "from": {
+                                            "nested": {
+                                                "email": {
+                                                    "mode": "chose",
+                                                    "label": "ai@mail.primesync.co"
+                                                }
+                                            }
+                                        },
+                                        "headers": {
+                                            "mode": "chose"
+                                        },
+                                        "send_to": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null
+                                            ]
+                                        },
+                                        "categories": {
+                                            "mode": "chose"
+                                        },
+                                        "attachments": {
+                                            "mode": "chose"
+                                        },
+                                        "custom_args": {
+                                            "mode": "chose"
+                                        },
+                                        "template_id": {
+                                            "mode": "chose",
+                                            "label": "Auto Repair Shop (Appointment Request)"
+                                        },
+                                        "content_type": {
+                                            "mode": "chose",
+                                            "label": "Empty"
+                                        },
+                                        "templateOrNot": {
+                                            "mode": "chose",
+                                            "label": "Yes"
+                                        },
+                                        "copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "json_or_values": {
+                                            "label": "Keys & Values"
+                                        },
+                                        "blind_copy_recipient": {
+                                            "mode": "chose"
+                                        },
+                                        "dynamic_template_data": {
+                                            "mode": "chose",
+                                            "items": [
+                                                null,
+                                                null,
+                                                null,
+                                                null
+                                            ]
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "sendgrid"
+                                            },
+                                            "label": "My SendGrid connection (make-api)"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:sendgrid",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "from",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "select",
+                                                "label": "Email address",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "From"
+                                    },
+                                    {
+                                        "name": "send_to",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email address",
+                                                    "required": true
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Send to",
+                                        "required": true,
+                                        "validate": {
+                                            "maxItems": 1000
+                                        }
+                                    },
+                                    {
+                                        "name": "templateOrNot",
+                                        "type": "select",
+                                        "label": "Use SendGrid Transactional template?",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "template",
+                                                "no_template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "attachments",
+                                        "spec": [
+                                            {
+                                                "name": "filename",
+                                                "type": "text",
+                                                "label": "File name",
+                                                "required": true,
+                                                "semantic": "file:name"
+                                            },
+                                            {
+                                                "name": "content",
+                                                "type": "buffer",
+                                                "label": "Data",
+                                                "required": true,
+                                                "semantic": "file:data"
+                                            },
+                                            {
+                                                "name": "content_id",
+                                                "type": "text",
+                                                "label": "Content ID"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Attachments"
+                                    },
+                                    {
+                                        "name": "categories",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "text",
+                                            "label": "Category",
+                                            "validate": {
+                                                "max": 255
+                                            }
+                                        },
+                                        "type": "array",
+                                        "label": "Categories",
+                                        "validate": {
+                                            "maxItems": 10
+                                        }
+                                    },
+                                    {
+                                        "name": "send_at",
+                                        "type": "date",
+                                        "label": "Send at"
+                                    },
+                                    {
+                                        "name": "copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "blind_copy_recipient",
+                                        "spec": {
+                                            "name": "value",
+                                            "spec": [
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email"
+                                                },
+                                                {
+                                                    "name": "name",
+                                                    "type": "text",
+                                                    "label": "Name"
+                                                }
+                                            ],
+                                            "type": "collection"
+                                        },
+                                        "type": "array",
+                                        "label": "Blind copy recipient",
+                                        "validate": {
+                                            "maxItems": 999
+                                        }
+                                    },
+                                    {
+                                        "name": "reply_to",
+                                        "spec": [
+                                            {
+                                                "name": "email",
+                                                "type": "email",
+                                                "label": "Email address"
+                                            },
+                                            {
+                                                "name": "name",
+                                                "type": "text",
+                                                "label": "Name"
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "Reply to"
+                                    },
+                                    {
+                                        "name": "asm",
+                                        "spec": [
+                                            {
+                                                "name": "group_id",
+                                                "type": "select",
+                                                "label": "Group ID"
+                                            },
+                                            {
+                                                "name": "groups_to_display",
+                                                "type": "select",
+                                                "label": "Groups to Display",
+                                                "multiple": true
+                                            }
+                                        ],
+                                        "type": "collection",
+                                        "label": "ASM"
+                                    },
+                                    {
+                                        "name": "custom_args",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key"
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Custom Args"
+                                    },
+                                    {
+                                        "name": "headers",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "text",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Headers"
+                                    },
+                                    {
+                                        "name": "template_id",
+                                        "type": "select",
+                                        "label": "Template ID",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "json_or_values",
+                                        "type": "select",
+                                        "label": "Map JSON or fill Keys and Values",
+                                        "validate": {
+                                            "enum": [
+                                                "json",
+                                                "values"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "subject",
+                                        "type": "text",
+                                        "label": "Subject"
+                                    },
+                                    {
+                                        "name": "content_type",
+                                        "type": "select",
+                                        "label": "Content Type",
+                                        "validate": {
+                                            "enum": [
+                                                "text/plain",
+                                                "text/html"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "content_value",
+                                        "type": "text",
+                                        "label": "Content"
+                                    },
+                                    {
+                                        "name": "dynamic_template_data",
+                                        "spec": [
+                                            {
+                                                "name": "key",
+                                                "type": "text",
+                                                "label": "Key",
+                                                "required": true
+                                            },
+                                            {
+                                                "name": "value",
+                                                "type": "any",
+                                                "label": "Value"
+                                            }
+                                        ],
+                                        "type": "array",
+                                        "label": "Dynamic Template Data"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "flow": [
+                        {
+                            "id": 20,
+                            "module": "twilio:SendSMS",
+                            "version": 2,
+                            "parameters": {
+                                "__IMTCONN__": 2837893
+                            },
+                            "filter": {
+                                "name": "Urgent Messages",
+                                "conditions": [
+                                    [
+                                        {
+                                            "a": "{{1.name}}",
+                                            "b": "urgent_message",
+                                            "o": "text:equal"
+                                        }
+                                    ]
+                                ]
+                            },
+                            "mapper": {
+                                "to": "+1[URGENT CONTACT]",
+                                "body": "Urgent Request\n\nClient Name: {{1.args.name}}\nPhone Number: {{1.args.phone}}\nMessage: {{1.args.message}}",
+                                "from": "+18777130763",
+                                "fromType": "phone",
+                                "messageBody": "body"
+                            },
+                            "metadata": {
+                                "designer": {
+                                    "x": 450,
+                                    "y": 2077,
+                                    "name": "Urgent Request"
+                                },
+                                "restore": {
+                                    "expect": {
+                                        "from": {
+                                            "mode": "chose",
+                                            "label": "(877) 713-0763"
+                                        },
+                                        "fromType": {
+                                            "mode": "chose",
+                                            "label": "phone number"
+                                        },
+                                        "mediaUrl": {
+                                            "mode": "chose"
+                                        },
+                                        "messageBody": {
+                                            "mode": "chose",
+                                            "label": "Create a Body"
+                                        },
+                                        "smartEncoded": {
+                                            "mode": "chose"
+                                        },
+                                        "applicationSid": {
+                                            "mode": "chose"
+                                        },
+                                        "provideFeedback": {
+                                            "mode": "chose"
+                                        }
+                                    },
+                                    "parameters": {
+                                        "__IMTCONN__": {
+                                            "data": {
+                                                "scoped": "true",
+                                                "connection": "twilio"
+                                            },
+                                            "label": "PrimeSync Twilio Connection"
+                                        }
+                                    }
+                                },
+                                "parameters": [
+                                    {
+                                        "name": "__IMTCONN__",
+                                        "type": "account:twilio",
+                                        "label": "Connection",
+                                        "required": true
+                                    }
+                                ],
+                                "expect": [
+                                    {
+                                        "name": "fromType",
+                                        "type": "select",
+                                        "label": "Send a message from",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "phone",
+                                                "service",
+                                                "channel"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "to",
+                                        "type": "text",
+                                        "label": "To",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "messageBody",
+                                        "type": "select",
+                                        "label": "Message Body",
+                                        "required": true,
+                                        "validate": {
+                                            "enum": [
+                                                "body",
+                                                "template"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "mediaUrl",
+                                        "spec": {
+                                            "name": "value",
+                                            "type": "url"
+                                        },
+                                        "type": "array",
+                                        "label": "Media URL"
+                                    },
+                                    {
+                                        "name": "smartEncoded",
+                                        "type": "boolean",
+                                        "label": "Smart encoded"
+                                    },
+                                    {
+                                        "name": "validityPeriod",
+                                        "type": "uinteger",
+                                        "label": "Validity period"
+                                    },
+                                    {
+                                        "name": "statusCallback",
+                                        "type": "url",
+                                        "label": "Status callback"
+                                    },
+                                    {
+                                        "name": "applicationSid",
+                                        "type": "select",
+                                        "label": "Application"
+                                    },
+                                    {
+                                        "name": "maxPrice",
+                                        "type": "number",
+                                        "label": "Max price"
+                                    },
+                                    {
+                                        "name": "provideFeedback",
+                                        "type": "boolean",
+                                        "label": "Provide feedback"
+                                    },
+                                    {
+                                        "name": "from",
+                                        "type": "select",
+                                        "label": "Phone number",
+                                        "required": true
+                                    },
+                                    {
+                                        "name": "body",
+                                        "type": "text",
+                                        "label": "Body",
+                                        "required": true,
+                                        "validate": {
+                                            "max": 1600
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "us2.make.com",
+        "notes": []
+    }
+}
